@@ -11,10 +11,15 @@ local reactorId = "0" --fill this if connectType = 2 (you can fill unique start 
 local reactorRedstone = "000" --you can fill unique start of address e.g. "6afd"
 local inputRedstone = "111" --you can fill unique start of address e.g. "6afd"
 --energy stogares
-local useEnergyStorage = false
+local useEnergyStorage = true
 local energyStorageType = 0
 --0 - use gregtech energy buffer
 --1 - use ic2 energy storage
+--2 - use gregtech energy buffer with asielib(nuclear output)
+local connectToEnergyStorageType = 0 
+--0 - connect by component name
+--1 - connect by address
+local energyStorageAddress = "0" --fill this if connectToEnergyStorageType = 1 (you can fill unique start of address e.g. "6afd")
 local updatePer = 3 -- 0 = never
 --end user settings
 
@@ -24,8 +29,8 @@ local rs1 = cmp.proxy(cmp.get(inputRedstone))
 local counter = 0
 local objects = {}
 local delay = 0.1
-local programmState = 0
-local programmStateString = {
+local programState = 0
+local programStateString = {
 "enable",
 "full batbuffer",
 "incomplete structure",
@@ -49,7 +54,10 @@ function printInfo(data)
 		reactorStateString = "Disable"
 	end
 	print("Reactor state: "..reactorStateString)
-	print("Programm state: "..tostring(programmState))
+	print("Program state: "..tostring(programState))
+	if useEnergyStorage then
+		print("Energy storage: "..tostring(math.floor(data.batBuf/data.batBufMax*100)))
+	end
 end
 
 function getInfo()
@@ -63,37 +71,59 @@ function getInfo()
 	}	
 
 	if objects.reactor == nil then
-		if connectType == 0 then
+		if connectToReactorType == 0 then
 			--0 - connect to reactor chamber
 			objects.reactor = cmp.reactor_chamber
-		elseif connectType == 1 then
+		elseif connectToReactorType == 1 then
 			--1 - connect to core
 			objects.reactor = cmp.reactor
-		elseif connectType == 2 then
+		elseif connectToReactorType == 2 then
 			--2 - connect by id
 			objects.reactor = cmp.proxy(cmp.get(reactorId))
 		else
-			print("error connectType")
+			io.stderr:write("error connectToReactorType")
 			os.sleep(5);
 			os.exit();
 		end
 	end
 
 	if useEnergyStorage == true and objects.batterybuffer == nil then
+		function getStorage(byAddress, addressOrName)
+			if byAddress == 1 then
+				return cmp.proxy(cmp.get(addressOrName))
+			else
+				return cmp.proxy(cmp.list(addressOrName)())
+			end
+		end
+		
 		if energyStorageType == 0 then
 			--0 - use gregtech energy buffer
-			objects.batterybuffer = cmp.proxy(cmp.list("batterybuffer")())
+			objects.batterybuffer = getStorage(connectToEnergyStorageType, "batterybuffer")
 			objects.getBatBuf = objects.batterybuffer.getStoredEU
 			objects.getBatBufMax = objects.batterybuffer.getEUCapacity
+			
 		elseif energyStorageType == 1 then
 			--1 - use ic2 energy storage
-			function null()
+			function zeroReturnFunction()
 				return 0
 			end
-			objects.getBatBuf = null
-			objects.getBatBufMax = null
+			objects.getBatBuf = zeroReturnFunction
+			objects.getBatBufMax = zeroReturnFunction
+			
+		elseif energyStorageType == 2 then
+			--2 - use gregtech energy buffer with asielib(nuclear output)
+			objects.batterybuffer = getStorage(connectToEnergyStorageType, "batterybuffer")
+			function getStoredEU()
+				return string.gsub(objects.batterybuffer.getSensorInformation()[3], "([^0-9]+)", "")
+			end
+			function getEUCapacity()
+				return string.gsub(objects.batterybuffer.getSensorInformation()[4], "([^0-9]+)", "")
+			end
+			objects.getBatBuf = getStoredEU
+			objects.getBatBufMax = getEUCapacity
+			
 		else
-			print("error useEnergyStorage")
+			io.stderr:write("error useEnergyStorage")
 			os.sleep(5);
 			os.exit();
 		end
@@ -112,8 +142,8 @@ cmp.gpu.setResolution(24, 6)
 while true do
 	local succes, data = pcall(getInfo)
 	if not succes then
-		programmState = 2
-		print("Error", data)
+		programState = 2
+		io.stderr:write("Error", data)
 		rs.setOutput(sideOut, 0)
 		if alarm then
 			rs1.setOutput(sideAlarm, 15)
@@ -123,21 +153,21 @@ while true do
 
 	if rs1.getInput(sideIn) == 0 then
 		--no redstone
-		programmState = 4
+		programState = 4
 	elseif (data.heat/data.maxHeat*100 >= 80.0) then
 		--overheat
-		programmState = 3
+		programState = 3
 		if alarm then
 			rs1.setOutput(sideAlarm, 15)
 		end
 	elseif useEnergyStorage == true and data.batBuf/data.batBufMax*100 >=90 then
 		--full batbuffer
-		programmState = 1
+		programState = 1
 	else
-		programmState = 0
+		programState = 0
 	end
 	
-	if programmState == 0 then
+	if programState == 0 then
 		rs.setOutput(sideOut, rs1.getInput(sideIn))
 	else
 		rs.setOutput(sideOut, 0)
