@@ -1,8 +1,10 @@
 local event = require("event")
-local blockUsers = {
-"y.varenkov",
-"darkwolfqww",
-
+local mode = 0
+--0 - black list
+--1 - white list
+local users = {
+"notch",
+"Herobrine",
 }
 --{"event", user name string number in array}
 local onEvents = {
@@ -17,6 +19,7 @@ local onEvents = {
 function check(...) 
 	local param = {...} 
 	local pointer = 0
+	local detect = false
 	
 	for _, events in pairs(onEvents) do
 		if param[1] == events[1] then
@@ -25,11 +28,16 @@ function check(...)
 		end
 	end
 	
-	for _, name in pairs(blockUsers) do
+	for _, name in pairs(users) do
 		if name == param[pointer] then
-			require("computer").shutdown() 
+			detect = true
 		end
 	end
+	
+	if (detect and mode == 0) or (not detect and mode == 1) then
+		require("computer").shutdown()
+	end
+	 
 end
 
 for _, events in pairs(onEvents) do
