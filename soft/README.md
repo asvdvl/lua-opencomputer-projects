@@ -28,9 +28,12 @@ small program for calculating the fullness of the buffer chest and the remaining
 # turn_off_if_some_people_tuch_computer.lua
 just shuts down the computer if an unwanted player touches the computer. 
 - set ```mode``` variable ```0``` for black list mode(turn off if these players have call the event) and ```1``` for white list mode(turn off if all but these players have call the event)
-- fill table users as ```{
+- fill table ```users``` as ```{
 "nick 1",
 "nick 2",
 ...
-}``` for for block or ignore this players
-
+}``` for block or ignore this players
+- fill ```onEvents``` as ```{
+{"event", 5(position in the table containing the nickname of the player who caused the event)},
+{"event 2", 6}, ...}```
+  - by default have ```key_down, key_up, touch, drop, motion(need motion sensor)``` events.
