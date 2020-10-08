@@ -80,50 +80,6 @@ local function forward()
 	end
 end
 
-function GoToCharge()
-	if isGoToCharge then
-		return
-	end
-	isGoToCharge = true
-	local locateBefore = {x = location.x, y = location.y, z = location.z}; 
-	print(1)
-	printInfo()
-	up()
-	while not (location.side == 2) do
-		right()
-	end
-	print()
-	while not (location.x == initVal.x) do
-		forward()
-		printInfo()
-	end
-	
-	print(2)
-	while not (location.side == 3) do
-		right()
-	end
-	while not (location.y == initVal.y) do
-		forward()
-		printInfo()
-	end
-	print(3)
-	while not (location.side == 0) do
-		right()
-	end
-	while not (location.z == initVal.z) do
-		up()
-		printInfo()
-	end
-	print(4)
-	while not (comp.energy()/comp.maxEnergy()*100 > 90) do 
-		os.sleep(10)
-		os.exit()
-	end
-	--isGoToCharge = false
-end
-
-
-
 local function printInfo()
 	--require("term").clear()
 	print("x: "..location.x);
@@ -148,6 +104,46 @@ local function getTurnRight()
 	end
 end
 
+function GoToCharge()
+	if isGoToCharge then
+		return
+	end
+	isGoToCharge = true
+	local locateBefore = {x = location.x, y = location.y, z = location.z}; 
+
+	printInfo()
+	up()
+	while not (location.side == 2) do
+		right()
+	end
+
+	while not (location.x == initVal.x) do
+		forward()
+		printInfo()
+	end
+
+	while not (location.side == 3) do
+		right()
+	end
+	while not (location.y == initVal.y) do
+		forward()
+		printInfo()
+	end
+
+	while not (location.side == 0) do
+		right()
+	end
+	while not (location.z == initVal.z) do
+		up()
+		printInfo()
+	end
+
+	while not (comp.energy()/comp.maxEnergy()*100 > 90) do 
+		os.sleep(10)
+		os.exit()
+	end
+	--isGoToCharge = false
+end
 
 --main cycle
 print("mineSize: x "..mineSize.x.." y "..mineSize.y.." z "..mineSize.z);
