@@ -6,14 +6,14 @@ local killedRain = 0
 local killedNight = 0
 local skipedTime = 0
 
-function killRain()
+function KillRain()
   if (world.isRaining(true)) then
     world.setRaining(false)
     killedRain = killedRain + 1
   end
 end
 
-function killNight()
+function KillNight()
   local time = world.getTime()
   if(time%24000 > 12000 and time%24000 < 24000) then
     killedNight = killedNight + 1
@@ -22,7 +22,7 @@ function killNight()
   end
 end
 
-function printInfo()
+local function printInfo()
   term.clear()
   local time = world.getTime()
   print("kill rain: "..killedRain)
@@ -42,8 +42,8 @@ function printInfo()
 end
 
 while(true) do
-  killRain()
-  killNight()
+  KillRain()
+  KillNight()
   printInfo()  
   os.sleep(1)
 end

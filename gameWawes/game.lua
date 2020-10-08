@@ -19,18 +19,17 @@ local summon2 = "/summon mw:bandit1 72263 76 -2411"
 modem.open(5)
 
 
-function executeComm (text) 
+local function executeComm (text) 
   comblock.setCommand(text)
   comblock.executeCommand()
 end
 
-function notify (text, subtext, icon)
+local function notify (text, subtext, icon)
   cmp.notification_interface.notify(text, subtext, icon, 0)
 end
 
 while true do
   local e = {event.pull(1)}
-  
   if e[1] == "control" then
     if e[2] == "start" and start == false then
       print(e[6])
@@ -49,11 +48,8 @@ while true do
           break
         end
       end  
-    elseif e[2]
+    end
   end
-
-
-
 
   if start == true and newvoln == true then
     spawned = math.random(volna, from);

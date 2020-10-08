@@ -1,5 +1,3 @@
-rm mine.lua
-edit mine.lua
 local r = require("robot")
 local cmp = require("component")
 local comp = require("computer")
@@ -13,7 +11,7 @@ local mineSize = {x = 20, y = 20, z = 50}
 --end user settings
 local initVal = {x = location.x, y = location.y, z = location.z};
 
-function changeSide(offset)
+local function changeSide(offset)
 	if offset + location.side >= 4 then
 		location.side = offset + location.side - 4
 	elseif offset + location.side < 0 then
@@ -23,17 +21,17 @@ function changeSide(offset)
 	end
 end
 
-function right()
+local function right()
 	r.turnRight();
 	changeSide(1);
 end
 
-function left()
+local function left()
 	r.turnLeft();
 	changeSide(-1);
 end
 
-function down()
+local function down()
 	if r.detectDown() then
 		r.swingDown()
 	end
@@ -42,7 +40,7 @@ function down()
 	location.z = location.z + 1;
 end
 
-function up()
+local function up()
 	if r.detectUp() then
 		r.swingUp()
 	end
@@ -50,13 +48,22 @@ function up()
 	location.z = location.z - 1;
 end
 
-function forward()
+local function mine()
+	if r.detectUp() then
+		r.swingUp()
+	end
+	if r.detect(3) then
+		r.swing(3)
+	end
+end
+
+local function forward()
 	if true then
-		goToCharge()
+		GoToCharge()
 	end
 	--comp.energy()/comp.maxEnergy()*100 < 30
 	mine()
-	
+
 	if location.side == 0 then
 		location.x = location.x + 1
 	elseif location.side == 1 then
@@ -73,7 +80,7 @@ function forward()
 	end
 end
 
-function goToCharge()
+function GoToCharge()
 	if isGoToCharge then
 		return
 	end
@@ -115,16 +122,9 @@ function goToCharge()
 	--isGoToCharge = false
 end
 
-function mine()
-	if r.detectUp() then
-		r.swingUp()
-	end
-	if r.detect(3) then
-		r.swing(3)
-	end
-end
 
-function printInfo()
+
+local function printInfo()
 	--require("term").clear()
 	print("x: "..location.x);
 	print("y: "..location.y);
@@ -132,7 +132,7 @@ function printInfo()
 	print("side: "..location.side);
 end
 
-function getTurnRight()
+local function getTurnRight()
 	if location.z%2 == 0 then
 		if location.side == 0 then
 			return true

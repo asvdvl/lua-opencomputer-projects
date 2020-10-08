@@ -22,6 +22,21 @@ local DNSDBFileStream
 local started = false
 local requests = 0
 
+--------запись таблицы в файл--------
+
+local function saveDBToFile()
+  local path = fs.path(DNSDB)
+  local name = fs.name(DNSDB)
+
+  fs.copy(DNSDB, DNSDB..".old")
+
+  --инициализация
+  local DBWriter = io.open(DNSDB, "w")
+  DBWriter:write(serialization.serialize(DNSTable))
+  DBWriter:flush()
+  DBWriter:close()
+end
+
 ---------обработка сообщений---------
 
 local function modemMessageHandler(...)
@@ -78,9 +93,9 @@ end
 
 --------------вывод инфо-------------
 
-function status()
+function Status()
   --io.stdout:write()
-  print("DNS Server by alex")
+  print("DNS Server by asvdeveloper")
   print("Записей в таблице:", #DNSTable)
   print("запросов:", requests)
   print("статус:", started)
@@ -90,7 +105,7 @@ end
 
 ----------работа с таблицей----------
 
-function tableHandler(request, ...)
+function TableHandler(request, ...)
   local args = {...}
   --add---------------------
   if request == "add" then
@@ -144,24 +159,9 @@ function tableHandler(request, ...)
   end
 end
 
---------запись таблицы в файл--------
-
-function saveDBToFile()
-  local path = fs.path(DNSDB)
-  local name = fs.name(DNSDB)
-
-  fs.copy(DNSDB, DNSDB..".old")
-  
-  --инициализация
-  local DBWriter = io.open(DNSDB, "w")
-  DBWriter:write(serialization.serialize(DNSTable))
-  DBWriter:flush()
-  DBWriter:close()
-end
-
 ----------запуск---------
 
-function start()
+function Start()
   --проверка на васю
   if started then
     io.stderr:write("Сервер уже запущен!")
@@ -203,7 +203,7 @@ end
 
 ----------остановка----------
 
-function stop()
+function Stop()
   if not started then  
     io.stderr:write("Сервер уже выключен!")
     return

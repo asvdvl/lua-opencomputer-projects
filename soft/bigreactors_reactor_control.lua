@@ -12,14 +12,14 @@ local valueMinimum = 20
 local valueMaximum = 80
 local retentionMode = false
 
-function turnOn()
+local function turnOn()
   reactor.setActive(true)
   reactor.setAllControlRodLevels(0)
   notifI.notify(messageOnTurnOn, "", itemOnTurnOn, 0)
   retentionMode = false
 end
 
-function turnOff()
+local function turnOff()
   reactor.setActive(false)
   reactor.setAllControlRodLevels(0)
   notifI.notify(messageOnTurnOff, "", itemOnTurnOff, 0)
