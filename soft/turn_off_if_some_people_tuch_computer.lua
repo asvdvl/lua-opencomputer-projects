@@ -13,31 +13,29 @@ local onEvents = {
 {"motion", 6},
 {"touch", 6},
 {"drop", 6},
-
 }
 
-function check(...) 
+local function check(...) 
 	local param = {...} 
 	local pointer = 0
 	local detect = false
-	
+
 	for _, events in pairs(onEvents) do
 		if param[1] == events[1] then
 			pointer = events[2]
 			break;
 		end
 	end
-	
+
 	for _, name in pairs(users) do
 		if name == param[pointer] then
 			detect = true
 		end
 	end
-	
+
 	if (detect and mode == 0) or (not detect and mode == 1) then
 		require("computer").shutdown()
 	end
-	 
 end
 
 for _, events in pairs(onEvents) do

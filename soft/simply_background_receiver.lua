@@ -5,7 +5,7 @@ cmp.modem.open(20)
 
 local chatAvailable = cmp.isAvailable("chat")
 
-function receive(...)
+local function receive(...)
 	local param = {...}
 	print(os.date()..tostring(param[6]))
 	if chatAvailable then
