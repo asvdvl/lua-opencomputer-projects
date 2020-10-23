@@ -1,4 +1,4 @@
---local asvutils = require("asvutils")
+local asvutils = require("asvutils")
 local cmp = require("component")
 local settLib = require("settings")
 local settings = {}
@@ -34,9 +34,7 @@ local defaultSettings = {
     },
 }
 
-
 local function loadSettings()
-    io.stdout:write("loading settings\n")
     local status
     status, settings = settLib.getSettings("machineController", defaultSettings)
     if status then
@@ -48,3 +46,22 @@ local function loadSettings()
     	os.sleep(3)
     end
 end
+
+local function correctItems()
+    for key, value in pairs(settings.machineGroups) do
+        settings.machineGroups[key] = asvutils.checkTableStructure(value, settings.machineGroupsItem)
+    end
+
+    for key, value in pairs(settings.machines) do
+        settings.machines[key] = asvutils.checkTableStructure(value, settings.machinesItem)
+    end
+end
+
+
+
+--init
+io.stdout:write("loading settings\n")
+loadSettings()
+
+io.stdout:write("correct items\n")
+correctItems()
