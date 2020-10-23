@@ -1,6 +1,7 @@
-local asvutils = require("asvutils")
+--local asvutils = require("asvutils")
 local cmp = require("component")
-local sett = require("settings")
+local settLib = require("settings")
+local settings = {}
 
 local defaultSettings = {
     actionMode = "file",
@@ -32,3 +33,18 @@ local defaultSettings = {
         groupObject = {}
     },
 }
+
+
+local function loadSettings()
+    io.stdout:write("loading settings\n")
+    local status
+    status, settings = settLib.getSettings("machineController", defaultSettings)
+    if status then
+    	io.stdout:write("loading complete\n")
+    else
+        io.stderr:write("error loading settings: "..settings.."\n")
+        io.stderr:write("loading default settings")
+    	settings = defaultSettings
+    	os.sleep(3)
+    end
+end
