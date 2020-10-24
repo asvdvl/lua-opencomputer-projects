@@ -1,15 +1,17 @@
 local asvutils = require("asvutils")
-local cmp = require("component")
 local settLib = require("settings")
 local settings = {}
 
 local defaultSettings = {
     actionMode = "file",
     --actionMode - set view of action(file or function mode)
-    --function mode - action write as function
-    --file mode - action write as path to program
+    ---`function` mode - action write as function
+    ---`file` mode - action write as path to program
+    ---`single` file - actions write as library
+    ---(A table with functions checkFunction, actionOnTRUE, actionOnFALSE, actionOnPrint should be returned).
+    ---The file path should be in checkFunction
     machineGroups = {
-        defaultGroupName = {checkFunction = "/usr/chk1", actionOnTRUE = "/usr/ac1", actionOnFALSE = "/usr/ac2", options = {returned = {}}}
+        defaultGroupName = {title = "Default Group", checkFunction = "/usr/chk1", actionOnTRUE = "/usr/ac1", actionOnFALSE = "/usr/ac2", actionOnPrint = "/usr/acP", options = {returned = {}}}
     },
     --current machineGroup object are passed as first argument
     --table of machines and passed as second argument
@@ -17,18 +19,18 @@ local defaultSettings = {
     --also stores the second return parameter in options.returned.(can be either a table or another arbitrary type)
 
     machines = {
-        defaultMachineName = {machineGroup = "defaultGroupName", options = {address = "1meh"}}
+        defaultMachineName = {title = "Default group title", machineGroup = "defaultGroupName", options = {address = "1meh"}}
     },
 
     machineGroupsItem = {
         --user parameters
-        checkFunction = "", actionOnTRUE = "", actionOnFALSE = "", options = {returned = {}},
+        title = "Default group title", checkFunction = "", actionOnTRUE = "", actionOnFALSE = "", actionOnPrint = "", options = {returned = {}},
         --service parameters
         machinesObjects = {}
     },
     machinesItem = {
         --user parameters
-        machineGroup = "defaultGroupName", options = {},
+        title = "Default machine title", machineGroup = "defaultGroupName", options = {},
         --service parameters
         groupObject = {}
     },
@@ -57,7 +59,19 @@ local function correctItems()
     end
 end
 
+local function createLinks()
+    for key, value in pairs(settings.machines) do
+        if settings.machineGroups[value.machineGroup] then
+            --set link in groupObject
+            settings.machines[key].groupObject = settings.machineGroups[value.machineGroup]
 
+            --add link to machineGroups
+            table.insert(settings.machineGroups[value.machineGroup].machinesObjects, value)
+        else
+            io.stderr:write("group "..value.machineGroup.." not found")
+        end
+    end
+end
 
 --init
 io.stdout:write("loading settings\n")
@@ -65,3 +79,6 @@ loadSettings()
 
 io.stdout:write("correct items\n")
 correctItems()
+
+io.stdout:write("create links\n")
+createLinks()
