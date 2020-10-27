@@ -3,6 +3,8 @@ local settLib = require("settings")
 local settings = {}
 
 local defaultSettings = {
+    --Warning! Don't edit this table. You can edit your solution in /etc/settings/machineController.set(serialized table).
+
     actionMode = 1,
     --actionMode - set action type(file, function or single mode)
     ---1: function mode - action write as function
@@ -14,10 +16,12 @@ local defaultSettings = {
     machineGroups = {
         defaultGroupName = {
             title = "Default Group",
-            checkFunction = "local a={...}local opt=a.machinesObjects[1].options;return math.ceil(computer.uptime()%opt.num1)==opt.num2,computer.uptime()",
-            action = "local a={...}local opt=a.machinesObjects[1].options;print(opt.returned[1], opt.returned[2])",
+            enable = true,
+            checkFunction = "local a={...}local opt=a[1].machinesObjects[1].options;return math.ceil(computer.uptime()%opt.num1)==opt.num2,computer.uptime()",
+            action = "local a={...}local opt=a[1].options.returned;print(opt[1], opt[2])",
             actionOnPrint = "",
-            options = {returned = {}}
+            options = {returned = {}},
+            executeEvery = 60
         }
     },
     --current machineGroup object are passed as first argument
@@ -26,6 +30,7 @@ local defaultSettings = {
     machines = {
         defaultMachineName = {
             title = "Default machine title",
+            enable = true,
             machineGroup = "defaultGroupName",
             options = {address = "1meh", num1=5, num2=2}
         }
@@ -35,13 +40,13 @@ local defaultSettings = {
 
     machineGroupsItem = {
         --user parameters
-        title = "Default group title", checkFunction = "", action = "",actionOnPrint = "", options = {returned = {}},
+        title = "Default group title", checkFunction = "", action = "",actionOnPrint = "", options = {returned = {}}, executeEvery = 60, enable = false,
         --service parameters
         machinesObjects = {}
     },
     machinesItem = {
         --user parameters
-        title = "Default machine title", machineGroup = "defaultGroupName", options = {},
+        title = "Default machine title", machineGroup = "defaultGroupName", options = {}, enable = false,
         --service parameters
         groupObject = {}
     },
@@ -144,3 +149,5 @@ io.stdout:write("loading functions\n")
 if not loadFunctions() then
     os.exit()
 end
+
+io.stdout:write("start working\n")
