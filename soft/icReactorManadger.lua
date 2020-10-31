@@ -35,6 +35,7 @@ if status then
 	io.stdout:write("loading complete\n")
 else
 	io.stderr:write("error loading settings: "..settings.."\n")
+	io.stderr:write("loading default settings")
 	settings = defaultSettings
 	os.sleep(3)
 end

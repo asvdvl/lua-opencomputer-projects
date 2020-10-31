@@ -1,5 +1,7 @@
 local cmp = require("component")
 local event = require("event")
+local greetingsFromFile = false
+local multilineGreetengs = true
 
 cmp.modem.open(20)
 
@@ -14,8 +16,22 @@ local function receive(...)
 	require("computer").beep(1400, 0.2)
 end
 
+local function initComplete()
+	cmp.chat.setName("System alert")
+
+	if greetingsFromFile then
+		local file = io.open("/usr/misc/receiverGreetings.txt")
+		if file and multilineGreetengs then
+			for val in file:lines() do
+				cmp.chat.say("§r"..val)
+			end
+		end
+	else
+		cmp.chat.say("Init complete")
+	end
+end
+
 event.listen("modem_message", receive)
 if chatAvailable then
-	cmp.chat.setName("system alert")
-	cmp.chat.say("Init complete")
+	initComplete()
 end
