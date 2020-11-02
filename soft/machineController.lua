@@ -106,7 +106,7 @@ end
 local function loadFunctions()
     if objectsAndSets.actionMode >= 1 and objectsAndSets.actionMode <= 3 then
         local functionKeys = {
-            "checkFunction", "action", "actionOnPrint"
+            "checkFunction", "action"
         }
 
         for keyGroup, item in pairs(objectsAndSets.machineGroups) do
@@ -117,24 +117,24 @@ local function loadFunctions()
                 for _, value in pairs(functionKeys) do
                     if objectsAndSets.actionMode == 1 then
                         local func, reason = load(objectsAndSets.machineGroups[keyGroup][value])
-                        objectsAndSets.machineGroups[keyGroup][value] = func
                         if reason then
-                            io.stderr:write("Function loading error: "..reason);
+                            io.stderr:write("Function "..value.." in "..keyGroup.." loading error: "..reason);
                             return false
                         end
+                        objectsAndSets.machineGroups[keyGroup][value] = func
                     else
                         local func, reason = loadfile(objectsAndSets.machineGroups[keyGroup][value])
-                        objectsAndSets.machineGroups[keyGroup][value] = func
                         if reason then
-                            io.stderr:write("File loading error: "..reason);
+                            io.stderr:write("File "..objectsAndSets.machineGroups[keyGroup][value].." in "..keyGroup.." loading error: "..reason);
                             return false
                         end
+                        objectsAndSets.machineGroups[keyGroup][value] = func
                     end
                 end
             else
                 local table, reason = loadfile(objectsAndSets.machineGroups[keyGroup].checkFunction)()
                 if reason then
-                    io.stderr:write("Functions loading error: "..reason);
+                    io.stderr:write("Functions in "..keyGroup.." loading error: "..reason);
                     return false
                 end
                 for _, value in pairs(functionKeys) do
