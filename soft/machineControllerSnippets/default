@@ -1,0 +1,26 @@
+{
+    actionMode = 1,
+    machineGroups = {
+        defaultGroupName = {
+            title = "Default Group",
+            enable = true,
+            checkFunction = "local a={...}local opt=a[1].machinesObjects[1].options;return {math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}",
+            action = "local a={...}local opt=a[1].options.returned.checkFunction;print(opt[1], opt[2])",
+            actionOnPrint = "",
+            options = {returned = {}},
+            executeEvery = 7
+        }
+    },
+    machines = {
+        defaultMachineName = {
+            title = "Default machine title",
+            enable = true,
+            machineGroup = "defaultGroupName",
+            options = {
+                address = "1meh", 
+                num1=5, 
+                num2=2
+            }
+        }
+    },
+}
