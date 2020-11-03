@@ -23,9 +23,10 @@ local defaultSettings = {
         defaultGroupName = {
             title = "Default Group",
             enable = true,
-            checkFunction = "local a={...}local opt=a[1].machinesObjects[1].options;return {math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}",
+            checkFunction = "local a={...}for _,mh in pairs(a[1].machinesObjects)do opt=mh.options;return{math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}end",
             action = "local a={...}local opt=a[1].options.returned.checkFunction;print(opt[1], opt[2])",
             actionOnPrint = "",
+            machines = {"defaultMachineName"},
             options = {returned = {}},
             executeEvery = 7
         }
@@ -37,7 +38,6 @@ local defaultSettings = {
         defaultMachineName = {
             title = "Default machine title",
             enable = true,
-            machineGroup = "defaultGroupName",
             options = {address = "1meh", num1=5, num2=2}
         }
     },
@@ -48,15 +48,15 @@ local defaultSettings = {
 local items = {
     machineGroupsItem = {
         --user parameters
-        title = "Default group title", checkFunction = "", action = "",actionOnPrint = "", options = {returned = {}}, executeEvery = 60, enable = false,
+        title = "Default group title", checkFunction = "", action = "",actionOnPrint = "", options = {returned = {}}, executeEvery = 60, enable = false, machines = {},
         --service parameters
         machinesObjects = {}, lastExecution = 0
     },
     machinesItem = {
         --user parameters
-        title = "Default machine title", machineGroup = "defaultGroupName", options = {}, enable = false,
+        title = "Default machine title", options = {}, enable = false,
         --service parameters
-        groupObject = {}
+        groupObjects = {}
     }
 }
 
@@ -85,22 +85,25 @@ local function correctItems()
 end
 
 local function createLinks()
-    for key, value in pairs(objectsAndSets.machines) do
-        if not objectsAndSets.machineGroups[value.machineGroup].enable or not value.enable then
-            break
-        end
-        if objectsAndSets.machineGroups[value.machineGroup] then
-            --set link in groupObject
-            objectsAndSets.machines[key].groupObject = objectsAndSets.machineGroups[value.machineGroup]
+    for key, value in pairs(objectsAndSets.machineGroups) do
+        for _, valueM in pairs(value.machines) do
+            if not objectsAndSets.machines[valueM] then
+                io.stderr:write("group `"..valueM.."` not found")
+                return false
+            end
+
+            if not value.enable or not objectsAndSets.machines[valueM].enable then
+                break
+            end
+
+            --add link to machinesObjects
+            value.machinesObjects[valueM] = objectsAndSets.machines[valueM]
 
             --add link to machineGroups
-            table.insert(objectsAndSets.machineGroups[value.machineGroup].machinesObjects, value)
-            return true
-        else
-            io.stderr:write("group "..value.machineGroup.." not found")
-            return false
+            objectsAndSets.machines[valueM].groupObjects[key] = value
         end
     end
+    return true
 end
 
 local function loadFunctions()

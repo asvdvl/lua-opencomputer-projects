@@ -7,6 +7,7 @@
             checkFunction = "",
             action = "",
             actionOnPrint = "",
+            machines = {},
             options = {returned = {}},
             executeEvery = 60
         }
@@ -15,7 +16,6 @@
         defaultMachineName = {
             title = "Machine title",
             enable = true,
-            machineGroup = "group",
             options = {}
         }
     },
