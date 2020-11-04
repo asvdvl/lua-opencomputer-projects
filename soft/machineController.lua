@@ -93,15 +93,13 @@ local function createLinks()
                 return false
             end
 
-            if not value.enable or not objectsAndSets.machines[valueM].enable then
-                break
+            if value.enable and objectsAndSets.machines[valueM].enable then
+                --add link to machinesObjects
+                machinesObj[valueM] = objectsAndSets.machines[valueM]
+
+                --add link to machineGroups
+                objectsAndSets.machines[valueM].groupObjects[key] = value
             end
-
-            --add link to machinesObjects
-            machinesObj[valueM] = objectsAndSets.machines[valueM]
-
-            --add link to machineGroups
-            objectsAndSets.machines[valueM].groupObjects[key] = value
         end
         value.machines = machinesObj
     end
@@ -115,35 +113,34 @@ local function loadFunctions()
         }
 
         for keyGroup, item in pairs(objectsAndSets.machineGroups) do
-            if not item.enable then
-                break
-            end
-            if objectsAndSets.actionMode == 1 or objectsAndSets.actionMode == 2 then
-                for _, value in pairs(functionKeys) do
-                    if objectsAndSets.actionMode == 1 then
-                        local func, reason = load(objectsAndSets.machineGroups[keyGroup][value])
-                        if reason then
-                            io.stderr:write("Function "..value.." in "..keyGroup.." loading error: "..reason);
-                            return false
+            if item.enable then
+                if objectsAndSets.actionMode == 1 or objectsAndSets.actionMode == 2 then
+                    for _, value in pairs(functionKeys) do
+                        if objectsAndSets.actionMode == 1 then
+                            local func, reason = load(objectsAndSets.machineGroups[keyGroup][value])
+                            if reason then
+                                io.stderr:write("Function "..value.." in "..keyGroup.." loading error: "..reason);
+                                return false
+                            end
+                            objectsAndSets.machineGroups[keyGroup][value] = func
+                        else
+                            local func, reason = loadfile(objectsAndSets.machineGroups[keyGroup][value])
+                            if reason then
+                                io.stderr:write("File "..objectsAndSets.machineGroups[keyGroup][value].." in "..keyGroup.." loading error: "..reason);
+                                return false
+                            end
+                            objectsAndSets.machineGroups[keyGroup][value] = func
                         end
-                        objectsAndSets.machineGroups[keyGroup][value] = func
-                    else
-                        local func, reason = loadfile(objectsAndSets.machineGroups[keyGroup][value])
-                        if reason then
-                            io.stderr:write("File "..objectsAndSets.machineGroups[keyGroup][value].." in "..keyGroup.." loading error: "..reason);
-                            return false
-                        end
-                        objectsAndSets.machineGroups[keyGroup][value] = func
                     end
-                end
-            else
-                local table, reason = loadfile(objectsAndSets.machineGroups[keyGroup].checkFunction)()
-                if reason then
-                    io.stderr:write("Functions in "..keyGroup.." loading error: "..reason);
-                    return false
-                end
-                for _, value in pairs(functionKeys) do
-                    objectsAndSets.machineGroups[keyGroup][value] = table[value]
+                else
+                    local table, reason = loadfile(objectsAndSets.machineGroups[keyGroup].checkFunction)()
+                    if reason then
+                        io.stderr:write("Functions in "..keyGroup.." loading error: "..reason);
+                        return false
+                    end
+                    for _, value in pairs(functionKeys) do
+                        objectsAndSets.machineGroups[keyGroup][value] = table[value]
+                    end
                 end
             end
         end
@@ -158,37 +155,34 @@ local function main()
     --searching minimum delay
     local delay = -1
     for _, value in pairs(objectsAndSets.machineGroups) do
-        if not value.enable then
-            break
-        end
-
-        if value.executeEvery < delay or delay == -1 then
-            delay = value.executeEvery
+        if value.enable then
+            if value.executeEvery < delay or delay == -1 then
+                delay = value.executeEvery
+            end
         end
     end
 
     while true do
         for key in pairs(objectsAndSets.machineGroups) do
             local currentGroup = objectsAndSets.machineGroups[key]
-            if not currentGroup.enable then
-                break
-            end
-            local time = comp.uptime()
-            if time - currentGroup.lastExecution >= currentGroup.executeEvery then
-                local functionKeys = {
-                    "checkFunction", "action"
-                }
+            if currentGroup.enable then
+                local time = comp.uptime()
+                if time - currentGroup.lastExecution >= currentGroup.executeEvery then
+                    local functionKeys = {
+                        "checkFunction", "action"
+                    }
 
-                for _, value in pairs(functionKeys) do
-                    local succes, data = pcall(currentGroup[value], currentGroup)
-                    if not succes then
-                        io.stderr:write("Group: `"..currentGroup.title.."` Func: `"..value.."` Error: `"..data.."`\n")
-                        break
+                    for _, value in pairs(functionKeys) do
+                        local succes, data = pcall(currentGroup[value], currentGroup)
+                        if not succes then
+                            io.stderr:write("Group: `"..currentGroup.title.."` Func: `"..value.."` Error: `"..data.."`\n")
+                            break
+                        end
+                        currentGroup.options.returned[value] = data
                     end
-                    currentGroup.options.returned[value] = data
-                end
 
-                currentGroup.lastExecution = comp.uptime()
+                    currentGroup.lastExecution = comp.uptime()
+                end
             end
         end
         os.sleep(delay)
