@@ -4,7 +4,7 @@
         defaultGroupName = {
             title = "Default Group",
             enable = true,
-            checkFunction = "local a={...}for _,mh in pairs(a[1].machinesObjects)do opt=mh.options;return{math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}end",
+            checkFunction = "local a={...}for _,mh in pairs(a[1].machines)do opt=mh.options;return{math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}end",
             action = "local a={...}local opt=a[1].options.returned.checkFunction;print(opt[1], opt[2])",
             actionOnPrint = "",
             machines = {"defaultMachineName"},

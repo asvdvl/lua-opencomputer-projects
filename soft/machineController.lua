@@ -23,7 +23,7 @@ local defaultSettings = {
         defaultGroupName = {
             title = "Default Group",
             enable = true,
-            checkFunction = "local a={...}for _,mh in pairs(a[1].machinesObjects)do opt=mh.options;return{math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}end",
+            checkFunction = "local a={...}for _,mh in pairs(a[1].machines)do opt=mh.options;return{math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}end",
             action = "local a={...}local opt=a[1].options.returned.checkFunction;print(opt[1], opt[2])",
             actionOnPrint = "",
             machines = {"defaultMachineName"},
@@ -50,7 +50,7 @@ local items = {
         --user parameters
         title = "Default group title", checkFunction = "", action = "",actionOnPrint = "", options = {returned = {}}, executeEvery = 60, enable = false, machines = {},
         --service parameters
-        machinesObjects = {}, lastExecution = 0
+        lastExecution = 0
     },
     machinesItem = {
         --user parameters
@@ -86,6 +86,7 @@ end
 
 local function createLinks()
     for key, value in pairs(objectsAndSets.machineGroups) do
+        local machinesObj = {}
         for _, valueM in pairs(value.machines) do
             if not objectsAndSets.machines[valueM] then
                 io.stderr:write("group `"..valueM.."` not found")
@@ -97,11 +98,12 @@ local function createLinks()
             end
 
             --add link to machinesObjects
-            value.machinesObjects[valueM] = objectsAndSets.machines[valueM]
+            machinesObj[valueM] = objectsAndSets.machines[valueM]
 
             --add link to machineGroups
             objectsAndSets.machines[valueM].groupObjects[key] = value
         end
+        value.machines = machinesObj
     end
     return true
 end
