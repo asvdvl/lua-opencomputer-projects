@@ -1,0 +1,88 @@
+{
+    actionMode = 1,
+    machineGroups = {
+        checkProblems = {
+            title = "Problem detector",
+            enable = true,
+            checkFunction = "local cmp = require("component")"..
+            "local toreturn = {}"..
+            "for _, value in pairs(group.machines) do"..
+            "    local addr = cmp.get(value.options.addr)"..
+            "    if not addr then"..
+            "        io.stderr:write("Could not resolve address "..value.options.addr.."\n")"..
+            "    end"..
+            "    local mach = cmp.proxy(addr)"..
+            "    local problems = tonumber(mach.getSensorInformation()[7])"..
+            "    if problems > 0 then"..
+            "        table.insert(toreturn, "`"..value.title.."` detect problems: "..problems)"..
+            "    end"..
+            "end"..
+            "return toreturn",
+
+            action = "local cmp = require("component")"..
+                "if group.options.returned.checkFunction then"..
+                "    for _, value in pairs(group.options.returned.checkFunction) do"..
+                "        cmp.modem.broadcast(20, value)"..
+                "    end"..
+                "end",
+
+            actionOnPrint = "",
+            
+            machines = {
+                "turbine",
+                "distilationTower",
+                "pyrolyseOven",
+                "blastFunace",
+                "cleanroom",
+                "multismelter",
+                "vacuumFreezer"
+            },
+            options = {returned = {}},
+            executeEvery = 10
+        }
+    },
+    machines = {
+        distilationTower = {
+            title = "Distilation tower",
+            enable = true,
+            options = {
+                addr = "274d"
+            }
+        },
+        pyrolyseOven = {
+            title = "Pyrolyse oven",
+            enable = true,
+            options = {
+                addr = "9b63"
+            }
+        },
+        blastFunace = {
+            title = "Blast furnace",
+            enable = true,
+            options = {
+                addr = "0639"
+            }
+        },
+        cleanroom = {
+            title = "Clean room",
+            enable = true,
+            options = {
+                addr = "00a2"
+            }
+        },
+        multismelter = {
+            title = "Multismelter",
+            enable = true,
+            options = {
+                addr = "5437"
+            }
+        },
+        vacuumFreezer = {
+            title = "Vacuum freezer",
+            enable = true,
+            options = {
+                addr = "b9aa"
+            }
+        }
+    },
+}
