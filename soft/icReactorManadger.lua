@@ -174,7 +174,7 @@ while true do
 	local succes, data = pcall(getInfo)
 	if not succes then
 		programState = 2
-		io.stderr:write("Error", data)
+		io.stderr:write("Error ", data)
 		rs.setOutput(settings.sideOut, 0)
 		if settings.alarm then
 			rs1.setOutput(settings.sideAlarm, 15)
