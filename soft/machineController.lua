@@ -4,7 +4,8 @@ local comp = require("computer")
 local objectsAndSets = {}
 
 local hardSett = {
-    loadDefaultIfParseFromFileError = false
+    loadDefaultIfParseFromFileError = false,
+    useScreenOutput = true,
 }
 
 local defaultSettings = {
@@ -60,15 +61,33 @@ local items = {
     }
 }
 
+if hardSett.useScreenOutput then
+    require("term").clear()
+end
+
+local function print(text, err)
+    if hardSett.useScreenOutput then
+        if err then
+            io.stderr:write(text.."\n")
+        else
+            io.stdout:write(text.."\n")
+        end
+    end
+end
+
+local function printErr(text)
+    print(text, true)
+end
+
 local function loadSettings()
     local status
     status, objectsAndSets = settLib.getSettings("machineController", defaultSettings)
     if not status then
-        io.stderr:write("error loading settings: "..objectsAndSets.."\n")
+        printErr("error loading settings: "..objectsAndSets)
         if not hardSett.loadDefaultIfParseFromFileError then
             return false
         end
-        io.stderr:write("loading default settings\n")
+        printErr("loading default settings")
         objectsAndSets = defaultSettings
     end
     return true
@@ -89,7 +108,7 @@ local function createLinks()
         local machinesObj = {}
         for _, valueM in pairs(value.machines) do
             if not objectsAndSets.machines[valueM] then
-                io.stderr:write("group `"..valueM.."` not found")
+                printErr("group `"..valueM.."` not found")
                 return false
             end
 
@@ -119,14 +138,14 @@ local function loadFunctions()
                         if objectsAndSets.actionMode == 1 then
                             local func, reason = load(objectsAndSets.machineGroups[keyGroup][value])
                             if reason then
-                                io.stderr:write("Function "..value.." in "..keyGroup.." loading error: "..reason);
+                                printErr("Function "..value.." in "..keyGroup.." loading error: "..reason);
                                 return false
                             end
                             objectsAndSets.machineGroups[keyGroup][value] = func
                         else
                             local func, reason = loadfile(objectsAndSets.machineGroups[keyGroup][value])
                             if reason then
-                                io.stderr:write("File "..objectsAndSets.machineGroups[keyGroup][value].." in "..keyGroup.." loading error: "..reason);
+                                printErr("File "..objectsAndSets.machineGroups[keyGroup][value].." in "..keyGroup.." loading error: "..reason);
                                 return false
                             end
                             objectsAndSets.machineGroups[keyGroup][value] = func
@@ -135,7 +154,7 @@ local function loadFunctions()
                 else
                     local table, reason = loadfile(objectsAndSets.machineGroups[keyGroup].checkFunction)()
                     if reason then
-                        io.stderr:write("Functions in "..keyGroup.." loading error: "..reason);
+                        printErr("Functions in "..keyGroup.." loading error: "..reason);
                         return false
                     end
                     for _, value in pairs(functionKeys) do
@@ -145,7 +164,7 @@ local function loadFunctions()
             end
         end
     else
-        io.stderr:write("parameter actionMode is not correct")
+        printErr("parameter actionMode is not correct")
         return false
     end
     return true
@@ -175,7 +194,7 @@ local function main()
                     for _, value in pairs(functionKeys) do
                         local succes, data = pcall(currentGroup[value], currentGroup)
                         if not succes then
-                            io.stderr:write("Group: `"..currentGroup.title.."` Func: `"..value.."` Error: `"..data.."`\n")
+                            printErr("Group: `"..currentGroup.title.."` Func: `"..value.."` Error: `"..data.."`")
                             break
                         end
                         currentGroup.options.returned[value] = data
@@ -190,24 +209,24 @@ local function main()
 end
 
 --init
-io.stdout:write("loading settings\n")
+print("loading settings")
 if not loadSettings() then
     os.exit()
 end
 
-io.stdout:write("correct items\n")
+print("correct items")
 correctItems()
 
-io.stdout:write("create links\n")
+print("create links")
 if not createLinks() then
     os.exit()
 end
 
-io.stdout:write("loading functions\n")
+print("loading functions")
 if not loadFunctions() then
     os.exit()
 end
 
 --main cycle
-io.stdout:write("start working\n")
+print("start working\n")
 main()
