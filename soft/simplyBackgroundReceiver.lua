@@ -2,6 +2,7 @@ local cmp = require("component")
 local event = require("event")
 local greetingsFromFile = false
 local multilineGreetengs = true
+local sayDistance = 3 --Max(default): 32
 
 cmp.modem.open(20)
 
@@ -18,7 +19,7 @@ end
 
 local function initComplete()
 	cmp.chat.setName("System alert")
-
+	cmp.chat.setDistance(sayDistance)
 	if greetingsFromFile then
 		local file = io.open("/usr/misc/receiverGreetings.txt")
 		if file and multilineGreetengs then

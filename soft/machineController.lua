@@ -4,7 +4,8 @@ local comp = require("computer")
 local objectsAndSets = {}
 
 local hardSett = {
-    loadDefaultIfParseFromFileError = false
+    loadDefaultIfParseFromFileError = false,
+    useScreenOutput = true,
 }
 
 local defaultSettings = {
@@ -23,9 +24,10 @@ local defaultSettings = {
         defaultGroupName = {
             title = "Default Group",
             enable = true,
-            checkFunction = "local a={...}local opt=a[1].machinesObjects[1].options;return {math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}",
+            checkFunction = "local a={...}for _,mh in pairs(a[1].machines)do opt=mh.options;return{math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}end",
             action = "local a={...}local opt=a[1].options.returned.checkFunction;print(opt[1], opt[2])",
             actionOnPrint = "",
+            machines = {"defaultMachineName"},
             options = {returned = {}},
             executeEvery = 7
         }
@@ -37,7 +39,6 @@ local defaultSettings = {
         defaultMachineName = {
             title = "Default machine title",
             enable = true,
-            machineGroup = "defaultGroupName",
             options = {address = "1meh", num1=5, num2=2}
         }
     },
@@ -48,27 +49,45 @@ local defaultSettings = {
 local items = {
     machineGroupsItem = {
         --user parameters
-        title = "Default group title", checkFunction = "", action = "",actionOnPrint = "", options = {returned = {}}, executeEvery = 60, enable = false,
+        title = "Default group title", checkFunction = "", action = "",actionOnPrint = "", options = {returned = {}}, executeEvery = 60, enable = false, machines = {},
         --service parameters
-        machinesObjects = {}, lastExecution = 0
+        lastExecution = 0
     },
     machinesItem = {
         --user parameters
-        title = "Default machine title", machineGroup = "defaultGroupName", options = {}, enable = false,
+        title = "Default machine title", options = {}, enable = false,
         --service parameters
-        groupObject = {}
+        groupObjects = {}
     }
 }
+
+if hardSett.useScreenOutput then
+    require("term").clear()
+end
+
+local function print(text, err)
+    if hardSett.useScreenOutput then
+        if err then
+            io.stderr:write(text.."\n")
+        else
+            io.stdout:write(text.."\n")
+        end
+    end
+end
+
+local function printErr(text)
+    print(text, true)
+end
 
 local function loadSettings()
     local status
     status, objectsAndSets = settLib.getSettings("machineController", defaultSettings)
     if not status then
-        io.stderr:write("error loading settings: "..objectsAndSets.."\n")
+        printErr("error loading settings: "..objectsAndSets)
         if not hardSett.loadDefaultIfParseFromFileError then
             return false
         end
-        io.stderr:write("loading default settings\n")
+        printErr("loading default settings")
         objectsAndSets = defaultSettings
     end
     return true
@@ -85,65 +104,67 @@ local function correctItems()
 end
 
 local function createLinks()
-    for key, value in pairs(objectsAndSets.machines) do
-        if not objectsAndSets.machineGroups[value.machineGroup].enable or not value.enable then
-            break
-        end
-        if objectsAndSets.machineGroups[value.machineGroup] then
-            --set link in groupObject
-            objectsAndSets.machines[key].groupObject = objectsAndSets.machineGroups[value.machineGroup]
+    for key, value in pairs(objectsAndSets.machineGroups) do
+        local machinesObj = {}
+        for _, valueM in pairs(value.machines) do
+            if not objectsAndSets.machines[valueM] then
+                printErr("group `"..valueM.."` not found")
+                return false
+            end
 
-            --add link to machineGroups
-            table.insert(objectsAndSets.machineGroups[value.machineGroup].machinesObjects, value)
-            return true
-        else
-            io.stderr:write("group "..value.machineGroup.." not found")
-            return false
+            if value.enable and objectsAndSets.machines[valueM].enable then
+                --add link to machinesObjects
+                machinesObj[valueM] = objectsAndSets.machines[valueM]
+
+                --add link to machineGroups
+                objectsAndSets.machines[valueM].groupObjects[key] = value
+            end
         end
+        value.machines = machinesObj
     end
+    return true
 end
 
 local function loadFunctions()
     if objectsAndSets.actionMode >= 1 and objectsAndSets.actionMode <= 3 then
         local functionKeys = {
-            "checkFunction", "action", "actionOnPrint"
+            "checkFunction", "action"
         }
 
         for keyGroup, item in pairs(objectsAndSets.machineGroups) do
-            if not item.enable then
-                break
-            end
-            if objectsAndSets.actionMode == 1 or objectsAndSets.actionMode == 2 then
-                for _, value in pairs(functionKeys) do
-                    if objectsAndSets.actionMode == 1 then
-                        local func, reason = load(objectsAndSets.machineGroups[keyGroup][value])
-                        objectsAndSets.machineGroups[keyGroup][value] = func
-                        if reason then
-                            io.stderr:write("Function loading error: "..reason);
-                            return false
-                        end
-                    else
-                        local func, reason = loadfile(objectsAndSets.machineGroups[keyGroup][value])
-                        objectsAndSets.machineGroups[keyGroup][value] = func
-                        if reason then
-                            io.stderr:write("File loading error: "..reason);
-                            return false
+            if item.enable then
+                if objectsAndSets.actionMode == 1 or objectsAndSets.actionMode == 2 then
+                    for _, value in pairs(functionKeys) do
+                        if objectsAndSets.actionMode == 1 then
+                            local func, reason = load(objectsAndSets.machineGroups[keyGroup][value])
+                            if reason then
+                                printErr("Function "..value.." in "..keyGroup.." loading error: "..reason);
+                                return false
+                            end
+                            objectsAndSets.machineGroups[keyGroup][value] = func
+                        else
+                            local func, reason = loadfile(objectsAndSets.machineGroups[keyGroup][value])
+                            if reason then
+                                printErr("File "..objectsAndSets.machineGroups[keyGroup][value].." in "..keyGroup.." loading error: "..reason);
+                                return false
+                            end
+                            objectsAndSets.machineGroups[keyGroup][value] = func
                         end
                     end
-                end
-            else
-                local table, reason = loadfile(objectsAndSets.machineGroups[keyGroup].checkFunction)()
-                if reason then
-                    io.stderr:write("Functions loading error: "..reason);
-                    return false
-                end
-                for _, value in pairs(functionKeys) do
-                    objectsAndSets.machineGroups[keyGroup][value] = table[value]
+                else
+                    local table, reason = loadfile(objectsAndSets.machineGroups[keyGroup].checkFunction)()
+                    if reason then
+                        printErr("Functions in "..keyGroup.." loading error: "..reason);
+                        return false
+                    end
+                    for _, value in pairs(functionKeys) do
+                        objectsAndSets.machineGroups[keyGroup][value] = table[value]
+                    end
                 end
             end
         end
     else
-        io.stderr:write("parameter actionMode is not correct")
+        printErr("parameter actionMode is not correct")
         return false
     end
     return true
@@ -153,37 +174,34 @@ local function main()
     --searching minimum delay
     local delay = -1
     for _, value in pairs(objectsAndSets.machineGroups) do
-        if not value.enable then
-            break
-        end
-
-        if value.executeEvery < delay or delay == -1 then
-            delay = value.executeEvery
+        if value.enable then
+            if value.executeEvery < delay or delay == -1 then
+                delay = value.executeEvery
+            end
         end
     end
 
     while true do
         for key in pairs(objectsAndSets.machineGroups) do
             local currentGroup = objectsAndSets.machineGroups[key]
-            if not currentGroup.enable then
-                break
-            end
-            local time = comp.uptime()
-            if time - currentGroup.lastExecution >= currentGroup.executeEvery then
-                local functionKeys = {
-                    "checkFunction", "action"
-                }
+            if currentGroup.enable then
+                local time = comp.uptime()
+                if time - currentGroup.lastExecution >= currentGroup.executeEvery then
+                    local functionKeys = {
+                        "checkFunction", "action"
+                    }
 
-                for _, value in pairs(functionKeys) do
-                    local succes, data = pcall(currentGroup[value], currentGroup)
-                    if not succes then
-                        io.stderr:write("Group: `"..currentGroup.title.."` Func: `"..value.."` Error: `"..data.."`\n")
-                        break
+                    for _, value in pairs(functionKeys) do
+                        local succes, data = pcall(currentGroup[value], currentGroup)
+                        if not succes then
+                            printErr("Group: `"..currentGroup.title.."` Func: `"..value.."` Error: `"..data.."`")
+                            break
+                        end
+                        currentGroup.options.returned[value] = data
                     end
-                    currentGroup.options.returned[value] = data
-                end
 
-                currentGroup.lastExecution = comp.uptime()
+                    currentGroup.lastExecution = comp.uptime()
+                end
             end
         end
         os.sleep(delay)
@@ -191,24 +209,24 @@ local function main()
 end
 
 --init
-io.stdout:write("loading settings\n")
+print("loading settings")
 if not loadSettings() then
     os.exit()
 end
 
-io.stdout:write("correct items\n")
+print("correct items")
 correctItems()
 
-io.stdout:write("create links\n")
+print("create links")
 if not createLinks() then
     os.exit()
 end
 
-io.stdout:write("loading functions\n")
+print("loading functions")
 if not loadFunctions() then
     os.exit()
 end
 
 --main cycle
-io.stdout:write("start working\n")
+print("start working\n")
 main()

@@ -1,0 +1,69 @@
+{
+    actionMode = 3,
+    machineGroups = {
+        checkProblems = {
+            title = "Problem detector",
+            enable = true,
+            checkFunction = "/usr/checkProblems.lua",
+
+            action = "",
+
+            actionOnPrint = "",
+            
+            machines = {
+                "distilationTower",
+                "pyrolyseOven",
+                "blastFunace",
+                "cleanroom",
+                "multismelter",
+                "vacuumFreezer"
+            },
+            options = {returned = {}},
+            executeEvery = 10
+        }
+    },
+    machines = {
+        distilationTower = {
+            title = "Distilation tower",
+            enable = true,
+            options = {
+                addr = "274d"
+            }
+        },
+        pyrolyseOven = {
+            title = "Pyrolyse oven",
+            enable = true,
+            options = {
+                addr = "9b63"
+            }
+        },
+        blastFunace = {
+            title = "Blast furnace",
+            enable = true,
+            options = {
+                addr = "0639"
+            }
+        },
+        cleanroom = {
+            title = "Clean room",
+            enable = true,
+            options = {
+                addr = "00a2"
+            }
+        },
+        multismelter = {
+            title = "Multismelter",
+            enable = true,
+            options = {
+                addr = "5437"
+            }
+        },
+        vacuumFreezer = {
+            title = "Vacuum freezer",
+            enable = true,
+            options = {
+                addr = "b9aa"
+            }
+        }
+    },
+}

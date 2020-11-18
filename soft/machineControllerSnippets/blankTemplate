@@ -1,0 +1,22 @@
+{
+    actionMode = 1,
+    machineGroups = {
+        group = {
+            title = "Group",
+            enable = true,
+            checkFunction = "",
+            action = "",
+            actionOnPrint = "",
+            machines = {},
+            options = {returned = {}},
+            executeEvery = 60
+        }
+    },
+    machines = {
+        defaultMachineName = {
+            title = "Machine title",
+            enable = true,
+            options = {}
+        }
+    },
+}
