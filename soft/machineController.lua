@@ -1,6 +1,7 @@
 local asvutils = require("asvutils")
 local settLib = require("settings")
 local comp = require("computer")
+local fs = require("filesystem")
 local objectsAndSets = {}
 
 local hardSett = {
@@ -29,11 +30,20 @@ local defaultSettings = {
             actionOnPrint = "",
             machines = {"defaultMachineName"},
             options = {returned = {}},
-            executeEvery = 7
+            executeEvery = 7,
+            printSettings = {}
         }
     },
-    --current machineGroup object are passed as first argument
-    --also stores the second return parameter in options.returned.(can be either a table or another arbitrary type)
+    --Current machineGroup object are passed as first argument
+    --Also stores the second return parameter in options.returned.(can be either a table or another arbitrary type)
+    --title - Custom parameter. Not used(Except in error messages and user scripts).
+    --enable - If false will be ignored during init and execute.
+    --machines - Table of text indexes in the machine table.
+    --checkFunction - A function(or file. see actionMode) where the code for getting some data from sensors or other input devices.
+    --action - A function(or file. see actionMode), where the code for processing the output value from checkFunction is located and/or some action is perfomed(e.g. enable reactors).
+    --p.s. Of course, you don't need to split into 2 different functions. Just write "return nil" for actionMode 1 and 2 or empty function for mode 3.
+    --options - Custom parameter. You can add your own fields. By default contains a table with returned values from checkFunction and action.
+    --executeEvery - Delay between executions groups.
 
     machines = {
         defaultMachineName = {
@@ -43,13 +53,24 @@ local defaultSettings = {
         }
     },
     --title - Custom parameter. Not used.
-    --machineGroup - The text value of the index in the machineGroups table.
+    --enable - If false will be ignored during create links and execute.
+    --options - Custom parameter. Not used. You can add your own fields.
+
+    printSettings = {
+        enable = false,
+    }
+    --enable - Enables the print function.
 }
 
 local items = {
     machineGroupsItem = {
         --user parameters
-        title = "Default group title", checkFunction = "", action = "",actionOnPrint = "", options = {returned = {}}, executeEvery = 60, enable = false, machines = {},
+        title = "Default group title", checkFunction = "", action = "", options = {returned = {}}, executeEvery = 60, enable = false, machines = {},
+        printSettings = {
+            enable = false,
+            action = "",
+            rows = 1,
+        },
         --service parameters
         lastExecution = 0
     },
@@ -143,6 +164,11 @@ local function loadFunctions()
                             end
                             objectsAndSets.machineGroups[keyGroup][value] = func
                         else
+                            if fs.exists(objectsAndSets.machineGroups[keyGroup].checkFunction) then
+                                printErr("File "..objectsAndSets.machineGroups[keyGroup][value].." in group "..keyGroup.." not exists");
+                                return false
+                            end
+
                             local func, reason = loadfile(objectsAndSets.machineGroups[keyGroup][value])
                             if reason then
                                 printErr("File "..objectsAndSets.machineGroups[keyGroup][value].." in "..keyGroup.." loading error: "..reason);
@@ -152,6 +178,11 @@ local function loadFunctions()
                         end
                     end
                 else
+                    if fs.exists(objectsAndSets.machineGroups[keyGroup].checkFunction) then
+                        printErr("File "..objectsAndSets.machineGroups[keyGroup].checkFunction.." in group "..keyGroup.." not exists");
+                        return false
+                    end
+
                     local table, reason = loadfile(objectsAndSets.machineGroups[keyGroup].checkFunction)()
                     if reason then
                         printErr("Functions in "..keyGroup.." loading error: "..reason);
@@ -168,6 +199,14 @@ local function loadFunctions()
         return false
     end
     return true
+end
+
+local function initScreen()
+    
+end
+
+local function updateScreen()
+    
 end
 
 local function main()
@@ -204,6 +243,7 @@ local function main()
                 end
             end
         end
+        updateScreen()
         os.sleep(delay)
     end
 end
@@ -225,6 +265,11 @@ end
 print("loading functions")
 if not loadFunctions() then
     os.exit()
+end
+
+print("init screen")
+if hardSett.useScreenOutput then
+    initScreen()
 end
 
 --main cycle

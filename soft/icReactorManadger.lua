@@ -86,7 +86,7 @@ local function getInfo()
 	reactorState = false,
 	batBuf = 0,
 	batBufMax = 0
-	}	
+	}
 
 	if objects.reactor == nil then
 		if settings.connectToReactorType == 0 then
@@ -113,13 +113,13 @@ local function getInfo()
 				return cmp.proxy(cmp.list(name)())
 			end
 		end
-		
+
 		if settings.energyStorageType == 0 then
 			--0 - use gregtech energy buffer
 			objects.batterybuffer = getStorage(settings.connectToEnergyStorageType, "batterybuffer", settings.energyStorageAddress)
 			objects.getBatBuf = objects.batterybuffer.getStoredEU
 			objects.getBatBufMax = objects.batterybuffer.getEUCapacity
-			
+
 		elseif settings.energyStorageType == 1 then
 			--1 - use ic2 energy storage
 			local function zeroReturnFunction()
@@ -127,7 +127,7 @@ local function getInfo()
 			end
 			objects.getBatBuf = zeroReturnFunction
 			objects.getBatBufMax = zeroReturnFunction
-			
+
 		elseif settings.energyStorageType == 2 then
 			--2 - use gregtech energy buffer with asielib(nuclear output)
 			objects.batterybuffer = getStorage(settings.connectToEnergyStorageType, "batterybuffer", settings.energyStorageAddress)
@@ -139,14 +139,14 @@ local function getInfo()
 			end
 			objects.getBatBuf = getStoredEU
 			objects.getBatBufMax = getEUCapacity
-			
+	
 		else
 			io.stderr:write("error useEnergyStorage")
 			os.sleep(5);
 			os.exit();
 		end
 	end
-	
+
 	data.heat = objects.reactor.getHeat()
 	data.maxHeat = objects.reactor.getMaxHeat()
 	data.reactorEUOutput = objects.reactor.getReactorEUOutput()
@@ -197,13 +197,13 @@ while true do
 	else
 		programState = 0
 	end
-	
+
 	if programState == 0 then
 		rs.setOutput(settings.sideOut, rs1.getInput(settings.sideIn))
 	else
 		rs.setOutput(settings.sideOut, 0)
 	end
-	
+
 	if counter == settings.updatePer then
 		printInfo(data)
 		counter = 0
