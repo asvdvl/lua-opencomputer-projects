@@ -10,7 +10,7 @@ local timeLib = require("time")
 local cmp = require("component")
 
 --settings
-local mode = 1
+local mode = 0
 --0 - black list
 --1 - white list
 local chatboxName = "goawaybot"
