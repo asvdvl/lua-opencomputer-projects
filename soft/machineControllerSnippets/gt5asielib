@@ -38,7 +38,7 @@
         },
         checkGeneratorsProblems = {
             title = "Problem detector in multiblock turbine and multiblock combustion engine"
-            enable = false,
+            enable = true,
             checkFunction = "/usr/checkGeneratorsProblems.lua",
 
             action = "",
@@ -46,7 +46,8 @@
             actionOnPrint = "",
 
             machines = {
-                "battareyBuffer"
+                "turbine", 
+                "combustionEngine"
             },
             options = {returned = {}},
             executeEvery = 10
@@ -103,18 +104,21 @@
             }
         },
         turbine = {
-            title = "BattareyBuffer",
+            title = "turbine",
             enable = true,
             options = {
                 addr = "001a"
             }
         },
         combustionEngine = {
-            title = "BattareyBuffer",
+            title = "combustion engine",
             enable = true,
             options = {
                 addr = "de28"
             }
         }
     },
+    printSettings = {
+        enable = false,
+    }
 }
