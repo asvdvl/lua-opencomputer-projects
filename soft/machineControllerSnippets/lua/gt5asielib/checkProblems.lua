@@ -1,9 +1,9 @@
 local this = {}
 local cmp = require("component")
 
-function this.checkFunction(group)
+function this.checkFunction(_, machines)
     local toreturn = {}
-    for _, value in pairs(group.machines) do
+    for _, value in pairs(machines) do
         local addr = cmp.get(value.options.addr)
         if not addr then
             io.stderr:write("Could not resolve address "..value.options.addr.."\n")
@@ -18,9 +18,9 @@ function this.checkFunction(group)
     return toreturn
 end
 
-function this.action(group)
-    if group.options.returned.checkFunction then
-        for _, value in pairs(group.options.returned.checkFunction) do
+function this.action(_, _, options)
+    if options.returned.checkFunction then
+        for _, value in pairs(options.returned.checkFunction) do
             cmp.modem.broadcast(20, value)
         end
     end
