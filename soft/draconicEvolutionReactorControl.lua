@@ -1,67 +1,158 @@
 --libs and service settings
 local cmp = require("component")
+local event = require("event")
 local PIDEnergy =
 {
-    pk = 2, --4
-    ik = 0.5, --0.4
-    dk = 5,
+    pk = 10,
+    ik = 0.25,
+    dk = 100,
     integral = 0,
     differential = 0,   --for debug
-    lastError = 0
+    lastError = 0,
+    needLevel = 7900
 }
 local PIDShield =
 {
-    pk = 2, --4
-    ik = 0.5, --0.4
-    dk = 5,
+    pk = 0.05,
+    ik = 0.015,
+    dk = 0.02,
     integral = 0,
     differential = 0,   --for debug
-    lastError = 0
+    lastError = 0,
+    needLevel = 0
 }
+local printHelp = false
+local exitF = false
+local eventNumb = 0
+local lastpidEnergy, lastpidShield, info = 0, 0, {}
 
 --user settings
 local arrdINRegulator = "20a"
 local arrdOUTRegulator = "d47"
-local temperatureLevel = 7900
-local shieldLevel = 20    --in persent
 local delay = 1 --in seconds
+local shieldLevel = 50    --in persent
+local warmingUpEnergyFlow = math.maxinteger
 
 --init components
 local reactor = cmp.draconic_reactor
 local INRegulator = cmp.proxy(cmp.get(arrdINRegulator))
 local OUTRegulator = cmp.proxy(cmp.get(arrdOUTRegulator))
 
+--calculate shield
+info = reactor.getReactorInfo()
+PIDShield.needLevel = info.maxFieldStrength * (shieldLevel/100)
+
 --functions
-local function calculatePID(currentTemperature, PIDArray)
-    local error = currentTemperature - temperatureLevel
-    PIDArray.integral = PIDArray.integral + error * delay
-    PIDArray.differential = (error - PIDArray.lastError)/delay
+local function calculatePID(currentTemperature, PIDArray, direction)
+    --direction: normal- false, reverse - true
+    local mdelay = delay
+    local error = currentTemperature - PIDArray.needLevel
+
+    if direction then
+        error = -error
+        mdelay = -delay
+    end
+
+    PIDArray.integral = PIDArray.integral + error * mdelay
+    local differential = (error - PIDArray.lastError)/mdelay
     PIDArray.lastError = error
-    return error * PIDArray.pk + PIDArray.integral * PIDArray.ik + PIDArray.differential * PIDArray.dk
+
+    PIDArray.differential = differential --for debug
+    return error * PIDArray.pk + PIDArray.integral * PIDArray.ik + differential * PIDArray.dk
 end
 
-local lastpid = 0
-local function main()
-    local info = reactor.getReactorInfo()
-    local pid = -calculatePID(info.temperature)
-    OUTRegulator.setSignalLowFlow(pid)
+local function printInfo()
+    local currentShieldLevel = info.fieldStrength/info.maxFieldStrength * 100
 
-
-    --out data
     require("term").clear()
-    print("pidout", pid, pid - lastpid, "RF/"..delay.."sec")
-    print("tempr", info.temperature, "shield", info)
-    print("error", PIDEnergy.lastError)
-    print("integral", PIDEnergy.integral, "differential", PIDEnergy.differential)
-    print("PIDEnergy", "p", PIDEnergy.pk, "i", PIDEnergy.ik, "d", PIDEnergy.dk, "settemp", temperatureLevel)
-    print("PIDShield", "p", PIDShield.pk, "i", PIDShield.ik, "d", PIDShield.dk, "setShield", shieldLevel)
-
-    lastpid = pid
+    print("status "..info.status)
+    print("tempr "..info.temperature)
+    print("shield "..currentShieldLevel, info.fieldStrength.."/"..info.maxFieldStrength)
+    print("energySaturation "..info.energySaturation/info.maxEnergySaturation, info.energySaturation.."/"..info.maxEnergySaturation)
+    print("")
+    print("settemp", PIDEnergy.needLevel)
+    print("setShield", shieldLevel, "("..PIDShield.needLevel..")")
 end
 
+local function main()
+    --get reactor state
+    info = reactor.getReactorInfo()
+
+    --print info
+    printInfo()
+
+    --processing reactor states
+    if info.status == "invalid" then
+
+    elseif info.status == "cold" then
+
+    elseif info.status == "warming_up" then
+        INRegulator.setSignalLowFlow(warmingUpEnergyFlow)
+        OUTRegulator.setSignalLowFlow(0)
+    elseif info.status == "running" then
+        local pidoutEnergy = -calculatePID(info.temperature, PIDEnergy)
+        local pidoutShield = -calculatePID(info.fieldStrength, PIDShield)
+        OUTRegulator.setSignalLowFlow(pidoutEnergy)
+        INRegulator.setSignalLowFlow(pidoutShield)
+
+        --out data(debug)
+        print("pidEnergy", pidoutEnergy, pidoutEnergy - lastpidEnergy, "RF/"..delay.."sec")
+        print("error", PIDEnergy.lastError)
+        print("integral", PIDEnergy.integral, "differential", PIDEnergy.differential)
+        print("")
+        print("pidShield", pidoutShield, pidoutShield - lastpidShield, "RF/"..delay.."sec")
+        print("error", PIDShield.lastError)
+        print("integral", PIDShield.integral, "differential", PIDShield.differential)
+
+        lastpidEnergy = pidoutEnergy
+        lastpidShield = pidoutShield
+
+    elseif info.status == "stopping" then
+
+    elseif info.status == "cooling" then
+
+    elseif info.status == "beyond_hope" then
+        print("oops...")
+    end
+
+    if printHelp then
+        print("q - exit")
+        print("h - show/hide this text")
+        print("t/y - +/- temperature")
+        print("j/k - +/- shield level")
+    else
+        print("press 'h' for keyhelp")
+    end
+end
+
+local function eventHandler(...)
+    local ev = {...}
+
+    if ev[4] == 16 then --q
+        exitF = true
+    elseif ev[4] == 35 then --h
+        printHelp = not printHelp
+
+    elseif ev[4] == 20 then --t
+        PIDEnergy.needLevel = PIDEnergy.needLevel + 1
+    elseif ev[4] == 21 then --y
+        PIDEnergy.needLevel = PIDEnergy.needLevel - 1
+    elseif ev[4] == 36 then --j
+        shieldLevel = shieldLevel + 1
+    elseif ev[4] == 37 then --k
+        shieldLevel = shieldLevel - 1
+    end
+    PIDShield.needLevel = info.maxFieldStrength * (shieldLevel/100)
+end
+eventNumb = event.listen("key_down", eventHandler)
 
 --main cycle
 while true do
+    if exitF then
+        event.cancel(eventNumb)
+        os.exit()
+    end
+
     main()
     os.sleep(delay)
 end
