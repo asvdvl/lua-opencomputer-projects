@@ -4,8 +4,8 @@ local event = require("event")
 local PIDEnergy =
 {
     pk = 10,
-    ik = 0.25,
-    dk = 100,
+    ik = 0.2,
+    dk = 300,
     integral = 0,
     differential = 0,   --for debug
     lastError = 0,
@@ -13,9 +13,9 @@ local PIDEnergy =
 }
 local PIDShield =
 {
-    pk = 0.05,
-    ik = 0.015,
-    dk = 0.02,
+    pk = 0.07,
+    ik = 0.007,
+    dk = 0.03,
     integral = 0,
     differential = 0,   --for debug
     lastError = 0,
@@ -85,10 +85,11 @@ local function main()
     if info.status == "invalid" then
 
     elseif info.status == "cold" then
-
+        print("press 's' to charge reactor")
     elseif info.status == "warming_up" then
         INRegulator.setSignalLowFlow(warmingUpEnergyFlow)
         OUTRegulator.setSignalLowFlow(0)
+        print("press 's' to activate reactor")
     elseif info.status == "running" then
         local pidoutEnergy = -calculatePID(info.temperature, PIDEnergy)
         local pidoutShield = -calculatePID(info.fieldStrength, PIDShield)
@@ -106,11 +107,11 @@ local function main()
 
         lastpidEnergy = pidoutEnergy
         lastpidShield = pidoutShield
-
+        print("press 's' to shutdown reactor")
     elseif info.status == "stopping" then
-
+        print("press 's' to activate reactor")
     elseif info.status == "cooling" then
-
+        print("press 's' to charge reactor")
     elseif info.status == "beyond_hope" then
         print("oops...")
     end
@@ -118,6 +119,7 @@ local function main()
     if printHelp then
         print("q - exit")
         print("h - show/hide this text")
+        print("s - start/stop reactor")
         print("t/y - +/- temperature")
         print("j/k - +/- shield level")
     else
@@ -141,6 +143,14 @@ local function eventHandler(...)
         shieldLevel = shieldLevel + 1
     elseif ev[4] == 37 then --k
         shieldLevel = shieldLevel - 1
+    elseif ev[4] == 31 then --s
+        if info.status == "cold" or info.status == "cooling" then
+            reactor.chargeReactor()
+        elseif info.status == "warming_up" or info.status == "stopping" then
+            reactor.activateReactor()
+        elseif info.status == "running" then
+            reactor.stopReactor()
+        end
     end
     PIDShield.needLevel = info.maxFieldStrength * (shieldLevel/100)
 end
