@@ -11,6 +11,15 @@ protecting reactor from meltdown.
 3. have 3 way to connect to reactor(reactor chamber, core(central block), by id)\
 **require setting.lua**(you can find it [here](https://github.com/asvdeveloper/lua-opencomputer-projects/blob/master/libs/settings.lua))
 
+# draconicEvolutionReactorControl.lua
+Automatically regulating input/output flux gates for supporting temperature and shield reactor.
+Attention! This program only for max load reactor(8 awakened draconium block). But it can also work with average load. I recomend test this program in test world before use in main world.
+Install:
+1. Copy the code and paste into the editor in the game.(e.g. `edit reactor`)
+2. Go to the user settings section at the beginning of the file.
+3. Change arrdINRegulator and arrdOUTRegulator addresses on yours
+4. Save file(Ctrl+S) and exit the editor(Ctrl+W) and run the program(type `reactor`)
+
 # monitorBinder.lua
 bind gpu on specifed monitors.
 - need table ```{
