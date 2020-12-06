@@ -3,9 +3,9 @@ local cmp = require("component")
 local event = require("event")
 local PIDEnergy =
 {
-    pk = 10,
-    ik = 0.2,
-    dk = 300,
+    pk = 300,
+    ik = 0.4,
+    dk = 100,
     integral = 0,
     differential = 0,   --for debug
     lastError = 0,
@@ -13,7 +13,7 @@ local PIDEnergy =
 }
 local PIDShield =
 {
-    pk = 0.07,
+    pk = 0.05,
     ik = 0.007,
     dk = 0.03,
     integral = 0,
@@ -29,18 +29,26 @@ local lastpidEnergy, lastpidShield, info = 0, 0, {}
 --user settings
 local arrdINRegulator = "20a"
 local arrdOUTRegulator = "d47"
-local delay = 1 --in seconds
-local shieldLevel = 50    --in persent
+local reactorAddress = ""   --optional
+local delay = 1             --in seconds
+local shieldLevel = 50      --in persent
 local warmingUpEnergyFlow = math.maxinteger
 
 --init components
-local reactor = cmp.draconic_reactor
+local reactor = {}
+if reactorAddress == "" then
+    reactor = cmp.draconic_reactor
+else
+    reactor = cmp.proxy(cmp.get(reactorAddress))
+end
 local INRegulator = cmp.proxy(cmp.get(arrdINRegulator))
 local OUTRegulator = cmp.proxy(cmp.get(arrdOUTRegulator))
 
---calculate shield
-info = reactor.getReactorInfo()
-PIDShield.needLevel = info.maxFieldStrength * (shieldLevel/100)
+--try get data
+if not reactor.getReactorInfo() then
+    print("Can not get data from reactor")
+    exitF = true
+end
 
 --functions
 local function calculatePID(currentTemperature, PIDArray, direction)
@@ -81,36 +89,50 @@ local function main()
     --print info
     printInfo()
 
+    --shield PID
+    if info.status == "running" or info.status == "stopping" then
+        local pidoutShield = -calculatePID(info.fieldStrength, PIDShield)
+        INRegulator.setSignalLowFlow(pidoutShield)
+
+        print("pidShield", pidoutShield, pidoutShield - lastpidShield, "RF/"..delay.."sec")
+        print("error", PIDShield.lastError)
+        print("integral", PIDShield.integral, "differential", PIDShield.differential)
+
+        lastpidShield = pidoutShield
+    end
+
+
     --processing reactor states
     if info.status == "invalid" then
-
-    elseif info.status == "cold" then
-        print("press 's' to charge reactor")
+        print("check the reactor structure")
     elseif info.status == "warming_up" then
-        INRegulator.setSignalLowFlow(warmingUpEnergyFlow)
-        OUTRegulator.setSignalLowFlow(0)
-        print("press 's' to activate reactor")
+        if info.temperature < 2000 then
+            --calculate shield
+            info = reactor.getReactorInfo()
+            PIDShield.needLevel = info.maxFieldStrength * (shieldLevel/100)
+
+            INRegulator.setSignalLowFlow(warmingUpEnergyFlow)
+            OUTRegulator.setSignalLowFlow(0)
+        else
+            INRegulator.setSignalLowFlow(0)
+            OUTRegulator.setSignalLowFlow(0)
+            print("press 's' to activate reactor")
+        end
+        print("press 'd' to shutdown reactor")
     elseif info.status == "running" then
         local pidoutEnergy = -calculatePID(info.temperature, PIDEnergy)
-        local pidoutShield = -calculatePID(info.fieldStrength, PIDShield)
         OUTRegulator.setSignalLowFlow(pidoutEnergy)
-        INRegulator.setSignalLowFlow(pidoutShield)
 
         --out data(debug)
         print("pidEnergy", pidoutEnergy, pidoutEnergy - lastpidEnergy, "RF/"..delay.."sec")
         print("error", PIDEnergy.lastError)
         print("integral", PIDEnergy.integral, "differential", PIDEnergy.differential)
-        print("")
-        print("pidShield", pidoutShield, pidoutShield - lastpidShield, "RF/"..delay.."sec")
-        print("error", PIDShield.lastError)
-        print("integral", PIDShield.integral, "differential", PIDShield.differential)
 
         lastpidEnergy = pidoutEnergy
-        lastpidShield = pidoutShield
         print("press 's' to shutdown reactor")
     elseif info.status == "stopping" then
         print("press 's' to activate reactor")
-    elseif info.status == "cooling" then
+    elseif info.status == "cooling" or info.status == "cold" then
         print("press 's' to charge reactor")
     elseif info.status == "beyond_hope" then
         print("oops...")
@@ -146,11 +168,13 @@ local function eventHandler(...)
     elseif ev[4] == 31 then --s
         if info.status == "cold" or info.status == "cooling" then
             reactor.chargeReactor()
-        elseif info.status == "warming_up" or info.status == "stopping" then
+        elseif (info.status == "warming_up" and info.temperature >= 2000) or info.status == "stopping" then
             reactor.activateReactor()
         elseif info.status == "running" then
             reactor.stopReactor()
         end
+    elseif ev[4] == 32 and info.status == "warming_up" then
+        reactor.stopReactor()
     end
     PIDShield.needLevel = info.maxFieldStrength * (shieldLevel/100)
 end
