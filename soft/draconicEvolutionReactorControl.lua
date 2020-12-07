@@ -3,8 +3,8 @@ local cmp = require("component")
 local event = require("event")
 local PIDEnergy =
 {
-    pk = 300,
-    ik = 0.4,
+    pk = 250,
+    ik = 6,
     dk = 100,
     integral = 0,
     differential = 0,   --for debug
@@ -15,7 +15,7 @@ local PIDShield =
 {
     pk = 0.05,
     ik = 0.007,
-    dk = 0.03,
+    dk = 0.02,
     integral = 0,
     differential = 0,   --for debug
     lastError = 0,
@@ -23,6 +23,7 @@ local PIDShield =
 }
 local printHelp = false
 local exitF = false
+local debugMode = false --can enable with 'i' key
 local eventNumb = 0
 local lastpidEnergy, lastpidShield, info = 0, 0, {}
 
@@ -66,20 +67,23 @@ local function calculatePID(currentTemperature, PIDArray, direction)
     PIDArray.lastError = error
 
     PIDArray.differential = differential --for debug
-    return error * PIDArray.pk + PIDArray.integral * PIDArray.ik + differential * PIDArray.dk
+    return -(error * PIDArray.pk + PIDArray.integral * PIDArray.ik + differential * PIDArray.dk)
 end
 
 local function printInfo()
-    local currentShieldLevel = info.fieldStrength/info.maxFieldStrength * 100
-
     require("term").clear()
     print("status "..info.status)
     print("tempr "..info.temperature)
-    print("shield "..currentShieldLevel, info.fieldStrength.."/"..info.maxFieldStrength)
-    print("energySaturation "..info.energySaturation/info.maxEnergySaturation, info.energySaturation.."/"..info.maxEnergySaturation)
-    print("")
-    print("settemp", PIDEnergy.needLevel)
-    print("setShield", shieldLevel, "("..PIDShield.needLevel..")")
+    print("settemp "..PIDEnergy.needLevel)
+    print("shield "..(math.ceil((info.fieldStrength/info.maxFieldStrength)*100000)/1000).."%")
+    print("setShield "..shieldLevel)
+    print("energySaturation "..(math.ceil((info.energySaturation/info.maxEnergySaturation)*10000)/100).."%")
+    if debugMode then
+        print("DEBUG INFO")
+        print("shield "..info.fieldStrength.."/"..info.maxFieldStrength)
+        print("setShield ".."("..PIDShield.needLevel..")")
+        print("energySaturation "..info.energySaturation.."/"..info.maxEnergySaturation)
+    end
 end
 
 local function main()
@@ -91,12 +95,14 @@ local function main()
 
     --shield PID
     if info.status == "running" or info.status == "stopping" then
-        local pidoutShield = -calculatePID(info.fieldStrength, PIDShield)
+        local pidoutShield = calculatePID(info.fieldStrength, PIDShield)
         INRegulator.setSignalLowFlow(pidoutShield)
 
-        print("pidShield", pidoutShield, pidoutShield - lastpidShield, "RF/"..delay.."sec")
-        print("error", PIDShield.lastError)
-        print("integral", PIDShield.integral, "differential", PIDShield.differential)
+        print("set shield input "..pidoutShield, (math.ceil((pidoutShield - lastpidShield)*100)/100).."RF/"..delay.."sec")
+        if debugMode then
+            print("error", PIDShield.lastError)
+            print("integral", PIDShield.integral, "differential", PIDShield.differential)
+        end
 
         lastpidShield = pidoutShield
     end
@@ -120,14 +126,14 @@ local function main()
         end
         print("press 'd' to shutdown reactor")
     elseif info.status == "running" then
-        local pidoutEnergy = -calculatePID(info.temperature, PIDEnergy)
+        local pidoutEnergy = calculatePID(info.temperature, PIDEnergy)
         OUTRegulator.setSignalLowFlow(pidoutEnergy)
 
-        --out data(debug)
-        print("pidEnergy", pidoutEnergy, pidoutEnergy - lastpidEnergy, "RF/"..delay.."sec")
-        print("error", PIDEnergy.lastError)
-        print("integral", PIDEnergy.integral, "differential", PIDEnergy.differential)
-
+        print("set output "..pidoutEnergy, (math.ceil((pidoutEnergy - lastpidEnergy)*100)/100).."RF/"..delay.."sec")
+        if debugMode then
+            print("error", PIDEnergy.lastError)
+            print("integral", PIDEnergy.integral, "differential", PIDEnergy.differential)
+        end
         lastpidEnergy = pidoutEnergy
         print("press 's' to shutdown reactor")
     elseif info.status == "stopping" then
@@ -156,7 +162,8 @@ local function eventHandler(...)
         exitF = true
     elseif ev[4] == 35 then --h
         printHelp = not printHelp
-
+    elseif ev[4] == 23 then --i(debug mode)
+        debugMode = not debugMode
     elseif ev[4] == 20 then --t
         PIDEnergy.needLevel = PIDEnergy.needLevel + 1
     elseif ev[4] == 21 then --y

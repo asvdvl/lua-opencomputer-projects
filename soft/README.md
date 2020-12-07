@@ -19,6 +19,12 @@ Install:
 2. Go to the user settings section at the beginning of the file.
 3. Change arrdINRegulator and arrdOUTRegulator addresses on yours
 4. Save file(Ctrl+S) and exit the editor(Ctrl+W) and run the program(type `reactor`)
+Use:
+1. Load fuel in reactor
+2. Run program
+3. Press the 's' button on the open screen to start the reactor or start the reactor in its interface
+4. While the program is running, you can change the temperature and shield level from the keyboard. (Use 'h' for key help)
+Attention! If you use intermediate buffers(e.g. draconic energy crystal), the program may not work stably with the shield at startup. Because when the reactor heats up a lot of energy remains in the intermediate crystals, which raises the shield level up to 90%, and algorithms trying to equalize this may allow the shield to drop to 20%, which is normal. Once the shield has stabilized, you can slowly lower it down to your desired level by up to 2%! However, if you connect the flux gate directly to the injector, then the shield works stably.
 
 # monitorBinder.lua
 bind gpu on specifed monitors.
