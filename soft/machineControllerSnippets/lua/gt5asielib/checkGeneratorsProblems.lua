@@ -10,9 +10,9 @@ function this.checkFunction(_, machines)
         end
 
         local mach = cmp.proxy(addr)
-        local problems = tonumber(mach.getSensorInformation()[7])
-        if problems > 0 then
-            table.insert(toreturn, "`"..value.title.."` detect problems: "..problems)
+        local problemsRowText = mach.getSensorInformation()[8]
+        if problemsRowText == "Needs Maintainance" then
+            table.insert(toreturn, "`"..value.title.."` have problems")
         end
     end
     return toreturn

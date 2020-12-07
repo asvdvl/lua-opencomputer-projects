@@ -1,6 +1,7 @@
 local asvutils = require("asvutils")
 local settLib = require("settings")
 local comp = require("computer")
+local fs = require("filesystem")
 local objectsAndSets = {}
 
 local hardSett = {
@@ -24,32 +25,55 @@ local defaultSettings = {
         defaultGroupName = {
             title = "Default Group",
             enable = true,
-            checkFunction = "local a={...}for _,mh in pairs(a[1].machines)do opt=mh.options;return{math.ceil(require(\"computer\").uptime()%opt.num1)==opt.num2,require(\"computer\").uptime()}end",
+            checkFunction = "local a={...}for _,mh in pairs(a[2])do opt=mh.options;return{math.ceil(require(\"computer\").uptime()%a[3].num1)==opt.num2,require(\"computer\").uptime()}end",
             action = "local a={...}local opt=a[1].options.returned.checkFunction;print(opt[1], opt[2])",
             actionOnPrint = "",
             machines = {"defaultMachineName"},
-            options = {returned = {}},
-            executeEvery = 7
+            options = {num1=5, returned = {}},
+            executeEvery = 7,
+            printSettings = {}
         }
     },
-    --current machineGroup object are passed as first argument
-    --also stores the second return parameter in options.returned.(can be either a table or another arbitrary type)
+    --Arguments for checkFunction action and actionOnPrint.
+    --Current machineGroup object are passed as first argument
+    --The machines and options are also passed as the second and third arguments, respectively.
+
+    --Also stores the second return parameter in options.returned.(can be either a table or another arbitrary type)
+    --title - Custom parameter. Not used(Except in error messages and user scripts).
+    --enable - If false this item will be ignored during init and execute.
+    --machines - Table of text indexes in the machine table.
+    --checkFunction - A function(or file. see actionMode) where the code for getting some data from sensors or other input devices.
+    --action - A function(or file. see actionMode), where the code for processing the output value from checkFunction is located and/or some action is perfomed(e.g. enable reactors).
+    --p.s. Of course, you don't need to split into 2 different functions. Just write "return nil" for actionMode 1 and 2 or empty function for mode 3.
+    --options - Custom parameter. You can add your own fields. By default contains a table with returned values from checkFunction and action.
+    --executeEvery - Delay between executions groups.
 
     machines = {
         defaultMachineName = {
             title = "Default machine title",
             enable = true,
-            options = {address = "1meh", num1=5, num2=2}
+            options = {num2=2}
         }
     },
     --title - Custom parameter. Not used.
-    --machineGroup - The text value of the index in the machineGroups table.
+    --enable - If false this item will be ignored during create links and execute.
+    --options - Custom parameter. Not used. You can add your own fields.
+
+    printSettings = {
+        enable = false,
+    }
+    --enable - Enables the print function.
 }
 
 local items = {
     machineGroupsItem = {
         --user parameters
-        title = "Default group title", checkFunction = "", action = "",actionOnPrint = "", options = {returned = {}}, executeEvery = 60, enable = false, machines = {},
+        title = "Default group title", checkFunction = "", action = "", options = {returned = {}}, executeEvery = 60, enable = false, machines = {},
+        printSettings = {
+            enable = false,
+            action = "",
+            rows = 1,
+        },
         --service parameters
         lastExecution = 0
     },
@@ -94,33 +118,33 @@ local function loadSettings()
 end
 
 local function correctItems()
-    for key, value in pairs(objectsAndSets.machineGroups) do
-        objectsAndSets.machineGroups[key] = asvutils.correctTableStructure(value, items.machineGroupsItem)
+    for index, object in pairs(objectsAndSets.machineGroups) do
+        objectsAndSets.machineGroups[index] = asvutils.correctTableStructure(object, items.machineGroupsItem)
     end
 
-    for key, value in pairs(objectsAndSets.machines) do
-        objectsAndSets.machines[key] = asvutils.correctTableStructure(value, items.machinesItem)
+    for index, object in pairs(objectsAndSets.machines) do
+        objectsAndSets.machines[index] = asvutils.correctTableStructure(object, items.machinesItem)
     end
 end
 
 local function createLinks()
-    for key, value in pairs(objectsAndSets.machineGroups) do
+    for machGroupIndex, item in pairs(objectsAndSets.machineGroups) do
         local machinesObj = {}
-        for _, valueM in pairs(value.machines) do
-            if not objectsAndSets.machines[valueM] then
-                printErr("group `"..valueM.."` not found")
+        for _, machineItemName in pairs(item.machines) do
+            if not objectsAndSets.machines[machineItemName] then
+                printErr("group `"..machineItemName.."` not found")
                 return false
             end
 
-            if value.enable and objectsAndSets.machines[valueM].enable then
+            if item.enable and objectsAndSets.machines[machineItemName].enable then
                 --add link to machinesObjects
-                machinesObj[valueM] = objectsAndSets.machines[valueM]
+                machinesObj[machineItemName] = objectsAndSets.machines[machineItemName]
 
                 --add link to machineGroups
-                objectsAndSets.machines[valueM].groupObjects[key] = value
+                objectsAndSets.machines[machineItemName].groupObjects[machGroupIndex] = item
             end
         end
-        value.machines = machinesObj
+        item.machines = machinesObj
     end
     return true
 end
@@ -131,34 +155,44 @@ local function loadFunctions()
             "checkFunction", "action"
         }
 
-        for keyGroup, item in pairs(objectsAndSets.machineGroups) do
+        for machGroupIndex, item in pairs(objectsAndSets.machineGroups) do
             if item.enable then
                 if objectsAndSets.actionMode == 1 or objectsAndSets.actionMode == 2 then
-                    for _, value in pairs(functionKeys) do
+                    for _, funcName in pairs(functionKeys) do
                         if objectsAndSets.actionMode == 1 then
-                            local func, reason = load(objectsAndSets.machineGroups[keyGroup][value])
+                            local func, reason = load(objectsAndSets.machineGroups[machGroupIndex][funcName])
                             if reason then
-                                printErr("Function "..value.." in "..keyGroup.." loading error: "..reason);
+                                printErr("Function "..funcName.." in "..machGroupIndex.." loading error: "..reason);
                                 return false
                             end
-                            objectsAndSets.machineGroups[keyGroup][value] = func
+                            objectsAndSets.machineGroups[machGroupIndex][funcName] = func
                         else
-                            local func, reason = loadfile(objectsAndSets.machineGroups[keyGroup][value])
-                            if reason then
-                                printErr("File "..objectsAndSets.machineGroups[keyGroup][value].." in "..keyGroup.." loading error: "..reason);
+                            if not fs.exists(objectsAndSets.machineGroups[machGroupIndex].checkFunction) then
+                                printErr("File "..objectsAndSets.machineGroups[machGroupIndex][funcName].." in group "..machGroupIndex.." not exists");
                                 return false
                             end
-                            objectsAndSets.machineGroups[keyGroup][value] = func
+
+                            local func, reason = loadfile(objectsAndSets.machineGroups[machGroupIndex][funcName])
+                            if reason then
+                                printErr("File "..objectsAndSets.machineGroups[machGroupIndex][funcName].." in "..machGroupIndex.." loading error: "..reason);
+                                return false
+                            end
+                            objectsAndSets.machineGroups[machGroupIndex][funcName] = func
                         end
                     end
                 else
-                    local table, reason = loadfile(objectsAndSets.machineGroups[keyGroup].checkFunction)()
-                    if reason then
-                        printErr("Functions in "..keyGroup.." loading error: "..reason);
+                    if not fs.exists(objectsAndSets.machineGroups[machGroupIndex].checkFunction) then
+                        printErr("File "..objectsAndSets.machineGroups[machGroupIndex].checkFunction.." in group "..machGroupIndex.." not exists");
                         return false
                     end
-                    for _, value in pairs(functionKeys) do
-                        objectsAndSets.machineGroups[keyGroup][value] = table[value]
+
+                    local table, reason = loadfile(objectsAndSets.machineGroups[machGroupIndex].checkFunction)()
+                    if reason then
+                        printErr("Functions in "..machGroupIndex.." loading error: "..reason);
+                        return false
+                    end
+                    for _, funcName in pairs(functionKeys) do
+                        objectsAndSets.machineGroups[machGroupIndex][funcName] = table[funcName]
                     end
                 end
             end
@@ -168,6 +202,14 @@ local function loadFunctions()
         return false
     end
     return true
+end
+
+local function initScreen()
+    
+end
+
+local function updateScreen()
+    
 end
 
 local function main()
@@ -182,8 +224,8 @@ local function main()
     end
 
     while true do
-        for key in pairs(objectsAndSets.machineGroups) do
-            local currentGroup = objectsAndSets.machineGroups[key]
+        for machGroupIndex in pairs(objectsAndSets.machineGroups) do
+            local currentGroup = objectsAndSets.machineGroups[machGroupIndex]
             if currentGroup.enable then
                 local time = comp.uptime()
                 if time - currentGroup.lastExecution >= currentGroup.executeEvery then
@@ -191,19 +233,20 @@ local function main()
                         "checkFunction", "action"
                     }
 
-                    for _, value in pairs(functionKeys) do
-                        local succes, data = pcall(currentGroup[value], currentGroup)
+                    for _, funcName in pairs(functionKeys) do
+                        local succes, data = pcall(currentGroup[funcName], currentGroup, currentGroup.machines, currentGroup.options)
                         if not succes then
-                            printErr("Group: `"..currentGroup.title.."` Func: `"..value.."` Error: `"..data.."`")
+                            printErr("Group: `"..currentGroup.title.."` Func: `"..funcName.."` Error: `"..data.."`")
                             break
                         end
-                        currentGroup.options.returned[value] = data
+                        currentGroup.options.returned[funcName] = data
                     end
 
                     currentGroup.lastExecution = comp.uptime()
                 end
             end
         end
+        updateScreen()
         os.sleep(delay)
     end
 end
@@ -225,6 +268,11 @@ end
 print("loading functions")
 if not loadFunctions() then
     os.exit()
+end
+
+print("init screen")
+if hardSett.useScreenOutput then
+    initScreen()
 end
 
 --main cycle

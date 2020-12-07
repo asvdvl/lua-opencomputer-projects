@@ -18,7 +18,7 @@ local onEvents = {
 local function check(...) 
 	local param = {...} 
 	local pointer = 0
-	local detect = false
+	local findUser = false
 
 	for _, events in pairs(onEvents) do
 		if param[1] == events[1] then
@@ -29,11 +29,11 @@ local function check(...)
 
 	for _, name in pairs(users) do
 		if name == param[pointer] then
-			detect = true
+			findUser = true
 		end
 	end
 
-	if (detect and mode == 0) or (not detect and mode == 1) then
+	if (findUser and mode == 0) or (not findUser and mode == 1) then
 		require("computer").shutdown()
 	end
 end
