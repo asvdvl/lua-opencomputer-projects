@@ -10,7 +10,7 @@ local hardSett = {
 }
 
 local defaultSettings = {
-    --Warning! Don't edit this table. You can edit your solution in /etc/settings/machineController.set(serialized table).
+    --Warning! Don't edit this table. You can edit your solution in /etc/settings/machineController.cfg(serialized table).
     --If the path to the file does not exist(or table is damaged) then run the program, the path and the file with the default settings will be created automatically.
 
     actionMode = 1,
@@ -32,6 +32,16 @@ local defaultSettings = {
             options = {num1=5, returned = {}},
             executeEvery = 7,
             printSettings = {}
+        },
+        defaultOnStartMessage = {
+            title = "On Start Message",
+            enable = true,
+            checkFunction = "local a={...}for b,c in pairs(a[2])do for b,d in pairs(c.options.rows)do print(d)end end",
+            action = "",
+            actionOnPrint = "",
+            machines = {"defaultOnStartMessageText"},
+            options = {returned = {}},
+            executeEvery = "start"
         }
     },
     --Arguments for checkFunction action and actionOnPrint.
@@ -46,13 +56,26 @@ local defaultSettings = {
     --action - A function(or file. see actionMode), where the code for processing the output value from checkFunction is located and/or some action is perfomed(e.g. enable reactors).
     --p.s. Of course, you don't need to split into 2 different functions. Just write "return nil" for actionMode 1 and 2 or empty function for mode 3.
     --options - Custom parameter. You can add your own fields. By default contains a table with returned values from checkFunction and action.
-    --executeEvery - Delay between executions groups.
+    --executeEvery - Delay between executions groups(in number). The "start" value is also available. in which the group is executed once i.e. at startup.
 
     machines = {
         defaultMachineName = {
             title = "Default machine title",
             enable = true,
             options = {num2=2}
+        },
+        defaultOnStartMessageText = {
+            title = "On Start Message text",
+            enable = true,
+            options = {
+                rows = {
+                    "It is default configuration.",
+                    "See /etc/settings/machineController.cfg to change the configuration.",
+                    "Also see machineControllerSnippets folder on repository for examples and work solutions.",
+                    "In this configuration, there is also an item that receives the computer's uptime and gets the remainder of the division of number1 and compares it with number2.",
+                    "The example is minified for string packaging but uses most of the features of this program."
+                }
+            }
         }
     },
     --title - Custom parameter. Not used.
@@ -213,6 +236,29 @@ local function updateScreen()
 end
 
 local function main()
+    local functionKeys = {
+        "checkFunction", "action"
+    }
+
+    --execute "start" operations
+    for machGroupIndex in pairs(objectsAndSets.machineGroups) do
+        local currentGroup = objectsAndSets.machineGroups[machGroupIndex]
+        if currentGroup.enable and currentGroup.executeEvery == "start" then
+            for _, funcName in pairs(functionKeys) do
+                local succes, data = pcall(currentGroup[funcName], currentGroup, currentGroup.machines, currentGroup.options)
+                if not succes then
+                    printErr("Group: `"..currentGroup.title.."` Func: `"..funcName.."` Error: `"..data.."`")
+                    break
+                end
+                currentGroup.options.returned[funcName] = data
+            end
+
+            currentGroup.lastExecution = comp.uptime()
+            --disable group
+            currentGroup.enable = false
+        end
+    end
+
     --searching minimum delay
     local delay = -1
     for _, value in pairs(objectsAndSets.machineGroups) do
@@ -229,10 +275,6 @@ local function main()
             if currentGroup.enable then
                 local time = comp.uptime()
                 if time - currentGroup.lastExecution >= currentGroup.executeEvery then
-                    local functionKeys = {
-                        "checkFunction", "action"
-                    }
-
                     for _, funcName in pairs(functionKeys) do
                         local succes, data = pcall(currentGroup[funcName], currentGroup, currentGroup.machines, currentGroup.options)
                         if not succes then
