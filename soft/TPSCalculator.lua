@@ -3,7 +3,7 @@ local cmp = require("component")
 local gpu = cmp.gpu
 
 local screenW = 9
-local screenH = 3
+local screenH = 2
 local calculateTicks = 20    --5 ticks - closest to real value and low latency. 20 ticks - 1 second
 local colorOutput = true
 local fullsreen = true
@@ -38,6 +38,5 @@ while true do
         end
     end
 
-    print("")
     print("tps: "..tps)
 end
