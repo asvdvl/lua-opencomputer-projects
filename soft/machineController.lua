@@ -7,6 +7,7 @@ local objectsAndSets = {}
 local hardSett = {
     loadDefaultIfParseFromFileError = false,
     useScreenOutput = true,
+    debug = false
 }
 
 local defaultSettings = {
@@ -112,6 +113,13 @@ if hardSett.useScreenOutput then
     require("term").clear()
 end
 
+local function debugPrint(text)
+    if hardSett.debug then
+        io.stdout:write("[DEBUG]["..comp.uptime().."] "..text.."\n")
+    end
+end
+
+
 local function print(text, err)
     if hardSett.useScreenOutput then
         if err then
@@ -165,6 +173,12 @@ local function createLinks()
 
                 --add link to machineGroups
                 objectsAndSets.machines[machineItemName].groupObjects[machGroupIndex] = item
+
+                debugPrint("Successfully create link between `"..machGroupIndex.."` and `"..machineItemName.."`")
+            else
+                debugPrint("Machine `"..machineItemName.."` was skip create links because machine group "..
+                "`"..machGroupIndex.."` is "..tostring(item.enable).." and `"..machineItemName..
+                "` is "..tostring(objectsAndSets.machines[machineItemName].enable))
             end
         end
         item.machines = machinesObj
@@ -180,6 +194,7 @@ local function loadFunctions()
 
         for machGroupIndex, item in pairs(objectsAndSets.machineGroups) do
             if item.enable then
+                debugPrint("Loading `"..machGroupIndex.."` functions")
                 if objectsAndSets.actionMode == 1 or objectsAndSets.actionMode == 2 then
                     for _, funcName in pairs(functionKeys) do
                         if objectsAndSets.actionMode == 1 then
@@ -218,6 +233,9 @@ local function loadFunctions()
                         objectsAndSets.machineGroups[machGroupIndex][funcName] = table[funcName]
                     end
                 end
+                debugPrint("Successful loading `"..machGroupIndex.."` functions")
+            else
+                debugPrint("Machine group `"..machGroupIndex.."` was skip load functions because machine group is disabled")
             end
         end
     else
@@ -240,10 +258,12 @@ local function main()
         "checkFunction", "action"
     }
 
+    debugPrint("Start execute `onstart` groups.")
     --execute "start" operations
     for machGroupIndex in pairs(objectsAndSets.machineGroups) do
         local currentGroup = objectsAndSets.machineGroups[machGroupIndex]
         if currentGroup.enable and currentGroup.executeEvery == "start" then
+            debugPrint("Start execute `"..machGroupIndex.."`")
             for _, funcName in pairs(functionKeys) do
                 local succes, data = pcall(currentGroup[funcName], currentGroup, currentGroup.machines, currentGroup.options)
                 if not succes then
@@ -268,11 +288,14 @@ local function main()
             end
         end
     end
+    debugPrint("Minimum delay is: "..delay)
+    debugPrint("Start execute normal groups.")
 
     while true do
         for machGroupIndex in pairs(objectsAndSets.machineGroups) do
             local currentGroup = objectsAndSets.machineGroups[machGroupIndex]
             if currentGroup.enable then
+                debugPrint("Start execute `"..machGroupIndex.."`")
                 local time = comp.uptime()
                 if time - currentGroup.lastExecution >= currentGroup.executeEvery then
                     for _, funcName in pairs(functionKeys) do
