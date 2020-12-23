@@ -3,6 +3,7 @@ local settLib = require("settings")
 local comp = require("computer")
 local fs = require("filesystem")
 local objectsAndSets = {}
+local groupEnv = {}
 
 local hardSett = {
     loadDefaultIfParseFromFileError = false,
@@ -186,6 +187,14 @@ local function createLinks()
     return true
 end
 
+local function buildEnviroment()
+    groupEnv = setmetatable(groupEnv, {__index = _G})
+    groupEnv["machineControllerENV"] = {}
+
+    groupEnv.machineControllerENV["items"] = items
+    groupEnv.machineControllerENV["objectsAndSets"] = objectsAndSets
+end
+
 local function loadFunctions()
     if objectsAndSets.actionMode >= 1 and objectsAndSets.actionMode <= 3 then
         local functionKeys = {
@@ -198,7 +207,7 @@ local function loadFunctions()
                 if objectsAndSets.actionMode == 1 or objectsAndSets.actionMode == 2 then
                     for _, funcName in pairs(functionKeys) do
                         if objectsAndSets.actionMode == 1 then
-                            local func, reason = load(objectsAndSets.machineGroups[machGroupIndex][funcName])
+                            local func, reason = load(objectsAndSets.machineGroups[machGroupIndex][funcName], nil, nil, groupEnv)
                             if reason then
                                 printErr("Function "..funcName.." in "..machGroupIndex.." loading error: "..reason);
                                 return false
@@ -210,7 +219,7 @@ local function loadFunctions()
                                 return false
                             end
 
-                            local func, reason = loadfile(objectsAndSets.machineGroups[machGroupIndex][funcName])
+                            local func, reason = loadfile(objectsAndSets.machineGroups[machGroupIndex][funcName], nil, groupEnv)
                             if reason then
                                 printErr("File "..objectsAndSets.machineGroups[machGroupIndex][funcName].." in "..machGroupIndex.." loading error: "..reason);
                                 return false
@@ -224,7 +233,7 @@ local function loadFunctions()
                         return false
                     end
 
-                    local table, reason = loadfile(objectsAndSets.machineGroups[machGroupIndex].checkFunction)()
+                    local table, reason = loadfile(objectsAndSets.machineGroups[machGroupIndex].checkFunction, nil, groupEnv)()
                     if reason then
                         printErr("Functions in "..machGroupIndex.." loading error: "..reason);
                         return false
@@ -329,6 +338,9 @@ print("create links")
 if not createLinks() then
     os.exit()
 end
+
+print("build enviroment")
+buildEnviroment()
 
 print("loading functions")
 if not loadFunctions() then
