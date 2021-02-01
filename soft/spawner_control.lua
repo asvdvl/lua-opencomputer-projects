@@ -3,6 +3,8 @@ local term = require("term")
 local exitF
 local eventNumb = 0
 local light = {state = false}
+local chars = {"-", "\\", "|", "/"}
+local currentChar = 0 --range 1-4
 local keycodes = { --4 parameter of key_down and key_up events
 	{2, "1"}, 	--{keycode, "real key"}
 	{3, "2"},
@@ -51,7 +53,16 @@ local function redstoneControl(objectRow, newState)
 	if newState then
 		newLevel = 15
 	end
+	objectRow.state = newState
 	objectRow.redstone.setOutput(objectRow.side, newLevel)
+end
+
+local function justAStrangeActivityIndicator()
+	currentChar = currentChar + 1
+	if currentChar >= #chars+1 then
+		currentChar = 1
+	end
+	return chars[currentChar]
 end
 
 local function printMenu()
@@ -62,6 +73,7 @@ local function printMenu()
 	--light row
 	io.stdout:write("[key:l] ligth. state: "..tostring(light.state).."\n")
 	io.stdout:write("[key:q] quit programm\n")
+	io.stdout:write(justAStrangeActivityIndicator())
 end
 
 local function init()
@@ -76,22 +88,22 @@ end
 
 local function eventHandler(...)
 	local event = {...}
-	for key, value in pairs(keycodes) do
-		if event[4] == value[1] then
+	for _, keyvalue in pairs(keycodes) do
+		if event[4] == keyvalue[1] then
 			--special for exit and light
-			if value[2] == "q" then
+			if keyvalue[2] == "q" then
 				exitF = true
 				require("event").cancel(eventNumb)
 				return
-			elseif value[2] == "l" then
+			elseif keyvalue[2] == "l" then
 				turnLight()
 				printMenu()
 				return
 			end
 			--search in objects table
-			for key, value in pairs(objects) do
-				if value.key == value[2] then
-
+			for _, objvalue in pairs(objects) do
+				if objvalue.key == keyvalue[2] then
+					redstoneControl(objvalue, not objvalue.state)
 					printMenu()
 					return
 				end
