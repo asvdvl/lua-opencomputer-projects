@@ -15,24 +15,18 @@ function this.checkFunction(_, _, opt)
                     io.stderr:write("Could not resolve address "..machine.options.addr.." in `"..machine.title.."`\n")
                     cmp.modem.broadcast(20, "Could not resolve address `"..machine.options.addr.."` in "..machine.title)
                     groups[group].machines[machineIndex].enable = false
-                    break;
-                end
-
-                --try detect gt multiblock
-                local mach = cmp.proxy(addr)
-                if mach.type ~= opt.machineType then
-                    io.stderr:write(machine.title.." is not a `"..opt.machineType.."`\n")
-                    cmp.modem.broadcast(20, machine.title.." is not a "..opt.machineType)
-                    groups[group].machines[machineIndex].enable = false
-                    break
-                end
-
-                local info = mach.getSensorInformation()
-                if info[6] ~= "Problems:" then
-                    io.stderr:write(machine.title.." required field `Problems:` in `getSensorInformation` is missing\n")
-                    cmp.modem.broadcast(20, machine.title.." is not a "..opt.machineType)
-                    groups[group].machines[machineIndex].enable = false
-                    break
+                else
+                    --try detect gt multiblock
+                    local mach = cmp.proxy(addr)
+                    if mach.type ~= opt.machineType then
+                        io.stderr:write(machine.title.." is not a `"..opt.machineType.."`\n")
+                        cmp.modem.broadcast(20, machine.title.." is not a "..opt.machineType)
+                        groups[group].machines[machineIndex].enable = false
+                    elseif mach.getSensorInformation()[6] ~= "Problems:" then
+                        io.stderr:write(machine.title.." required field `Problems:` in `getSensorInformation` is missing\n")
+                        cmp.modem.broadcast(20, machine.title.." is not a "..opt.machineType)
+                        groups[group].machines[machineIndex].enable = false
+                    end
                 end
             end
         end
