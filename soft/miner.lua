@@ -35,7 +35,7 @@ local function down()
 	if r.detectDown() then
 		r.swingDown()
 	end
-	
+
 	r.down();
 	location.z = location.z + 1;
 end
@@ -58,10 +58,9 @@ local function mine()
 end
 
 local function forward()
-	if true then
+	if comp.energy()/comp.maxEnergy()*100 < 30 then
 		GoToCharge()
 	end
-	--comp.energy()/comp.maxEnergy()*100 < 30
 	mine()
 
 	if location.side == 0 then
@@ -73,7 +72,7 @@ local function forward()
 	elseif location.side == 3 then
 		location.y = location.y - 1
 	end
-	while not r.forward() do 
+	while not r.forward() do
 		if r.detect(3) then
 			r.swing(3)
 		end
@@ -90,17 +89,9 @@ end
 
 local function getTurnRight()
 	if location.z%2 == 0 then
-		if location.side == 0 then
-			return true
-		else 
-			return false
-		end
+		return location.side == 0
 	else
-		if location.side == 0 then
-			return false
-		else 
-			return true
-		end
+		return not location.side == 0
 	end
 end
 
@@ -109,7 +100,6 @@ function GoToCharge()
 		return
 	end
 	isGoToCharge = true
-	local locateBefore = {x = location.x, y = location.y, z = location.z}; 
 
 	printInfo()
 	up()
@@ -138,7 +128,7 @@ function GoToCharge()
 		printInfo()
 	end
 
-	while not (comp.energy()/comp.maxEnergy()*100 > 90) do 
+	while not (comp.energy()/comp.maxEnergy()*100 > 90) do
 		os.sleep(10)
 		os.exit()
 	end
@@ -157,12 +147,12 @@ for z = initVal.z, mineSize.z do
 		if getTurnRight() then
 			right();
 			forward();
-			right();		
+			right();
 		else
 			left();
 			forward();
 			left();
-		end 
+		end
 		printInfo();
 		os.sleep(delay);
 	end
