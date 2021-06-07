@@ -90,7 +90,6 @@ local function main()
     --get reactor state
     info = reactor.getReactorInfo()
 
-    --print info
     printInfo()
 
     --shield PID
@@ -110,7 +109,7 @@ local function main()
 
     --processing reactor states
     if info.status == "invalid" then
-        print("check the reactor structure")
+        print("reactor have invalid structure. check the reactor structure")
     elseif info.status == "warming_up" then
         if info.temperature < 2000 then
             --calculate shield

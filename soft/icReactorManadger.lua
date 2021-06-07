@@ -65,7 +65,7 @@ local function printInfo(data)
 	term.clear()
 	print("Reactor heat: "..tostring(data.heat/data.maxHeat*100).."%")
 	print("Reactor output: "..math.floor(data.reactorEUOutput).." EU")
-	local reactorStateString = "";
+	local reactorStateString = ""
 	if data.reactorState then
 		reactorStateString = "Enable"
 	else
@@ -100,8 +100,8 @@ local function getInfo()
 			objects.reactor = cmp.proxy(cmp.get(settings.reactorId))
 		else
 			io.stderr:write("error connectToReactorType")
-			os.sleep(5);
-			os.exit();
+			os.sleep(5)
+			os.exit()
 		end
 	end
 
@@ -142,8 +142,8 @@ local function getInfo()
 	
 		else
 			io.stderr:write("error useEnergyStorage")
-			os.sleep(5);
-			os.exit();
+			os.sleep(5)
+			os.exit()
 		end
 	end
 
@@ -179,7 +179,7 @@ while true do
 		if settings.alarm then
 			rs1.setOutput(settings.sideAlarm, 15)
 		end
-		os.exit();
+		os.exit()
 	end
 
 	if rs1.getInput(settings.sideIn) == 0 then
