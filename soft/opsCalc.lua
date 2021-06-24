@@ -3,7 +3,7 @@
 opencomputers, lua 5.3: 0.056s, 17857142 ops(1.8879% from host)
 native c++ program: 0.0010572s, 945894816 ops
 ]]
-local time = require("time")
+local time = require("asv").time
 
 local x = 0
 local op = 1000000

@@ -5,8 +5,8 @@
 	I recommend adding a user with your nickname (adduser <nick> command) to block the interface.
 ]]
 local event = require("event")
-local settLib = require("settings") --for detected users
-local timeLib = require("time")
+local settLib = require("asv").settings --for detected users
+local timeLib = require("asv").time
 local cmp = require("component")
 
 --settings

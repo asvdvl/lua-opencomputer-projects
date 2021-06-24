@@ -1,4 +1,4 @@
-local time = require("time")
+local time = require("asv").time
 local cmp = require("component")
 local gpu = cmp.gpu
 

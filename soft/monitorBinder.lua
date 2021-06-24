@@ -1,4 +1,4 @@
-local cmp = require("component") 
+local cmp = require("component")
 --gpu, screen
 local binds = {
 {"b078", "6d14"},

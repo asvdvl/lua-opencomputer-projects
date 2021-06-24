@@ -23,7 +23,7 @@ local defaultSettings = {
 	updatePer = 3, -- 0 = never
 }
 
-local settLib = require("settings")
+local settLib = require("asv").settings
 local settings = {}
 
 --load settings

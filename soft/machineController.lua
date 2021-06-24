@@ -1,5 +1,5 @@
-local asvutils = require("asvutils")
-local settLib = require("settings")
+local asvutils = require("asv").utils
+local settLib = require("asv").settings
 local comp = require("computer")
 local fs = require("filesystem")
 local objectsAndSets = {}

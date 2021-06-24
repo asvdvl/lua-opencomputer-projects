@@ -3,7 +3,7 @@ local event = require("event")
 local cmp = require("component")
 local groups = machineControllerENV.objectsAndSets.machineGroups
 local machines = machineControllerENV.objectsAndSets.machines
-local asvutils = require("asvutils")
+local asvutils = require("asv").utils
 
 function this.checkFunction(_, _, opt)
     --check existing items
