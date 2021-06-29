@@ -1,4 +1,4 @@
-# Attention! Some programs use asvlibs to work! See installation instructions and the rest at https://github.com/asvdvl/asvlibs
+# Attention! Some programs use asvlibs to work! See installation instructions and other at https://github.com/asvdvl/asvlibs
 
 ## lua-opencomputer-projects
 projects work on opencomputers with lua
