@@ -16,8 +16,31 @@ local DNSData = ""
 local DNSClient = {}
 local localDB = {}
 local cmp = require("component")
-local computer = require("computer")
+local event = require("event")
 local modem, send
+
+local function init() --сделать отправку данных о себе
+  if not modem then
+    if not cmp.isAvailable("modem") then
+      return false
+    end
+    modem =  require("component").modem
+  end
+  if not modem.isOpen(DNSPort) then
+    modem.open(DNSPort)
+  end
+  if not DNSAddress then
+    if DNSClient.ping() then
+      return false
+    end
+  end
+  if sendDataAboutYourself then
+    --todo
+  end
+
+  send = function(...) modem.send("dns", ...) end
+  return true
+end
 
 local function chechOnInit()
   if not DNSAddress or not modem then
@@ -67,29 +90,6 @@ function DNSClient.get(name)
   if ansver[6] == "dnsAnswer" and ansver[7] == "ok" then
     --продолжать здесть
   end
-end
-
-local function init() --сделать отправку данных о себе
-  if not modem then
-    if not cmp.isAvailable("modem") then
-      return false
-    end
-    modem =  require("component").modem
-  end
-  if not modem.isOpen(DNSPort) then
-    modem.open(DNSPort)
-  end
-  if not DNSAddress then
-    if DNSClient.ping() then
-      return false
-    end
-  end
-  if sendDataAboutYourself then
-    --todo
-  end
-  
-  send = function(...) modem.send("dns", ...) end
-  return true
 end
 
 return DNSClient

@@ -58,3 +58,11 @@ a small program for Blastfurnace(mod: GregTech). This program switches Blastfurn
 
 # simplyPyroliseControlWithLiquidOutput.lua 
 a small program for Pyrolise Oven(mod: GregTech). This program switches Pyrolise Oven on or off depending on the count of fluid in tank.
+
+### dnsserver(old project, server is done but not implemented all functionality in the client)
+
+### watchRemote(old project)
+this is simple server witch send on detect motion on modem and simple client which can send signal "beep" if receive message, type on console receive message and can turn off beep signal.
+
+### gameWawes(old project, not work)
+a game where you need to keep the base from the waves of opponents, there is a store in which the number of enemy killed
