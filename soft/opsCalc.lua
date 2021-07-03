@@ -11,6 +11,9 @@ print(op.." cycles")
 local startTime = time.getRaw()
 for i = 0, op do
     x = (x + 2)*3
+    if i % 100000000 then
+        os.sleep(0)
+    end
 end
 local finishTime = time.getRaw()
 local elapsed = (finishTime - startTime)/1000
