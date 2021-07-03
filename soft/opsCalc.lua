@@ -11,7 +11,7 @@ print(op.." cycles")
 local startTime = time.getRaw()
 for i = 0, op do
     x = (x + 2)*3
-    if i % 100000000 then
+    if i % 100000000 == 0 then
         os.sleep(0)
     end
 end
