@@ -1,6 +1,7 @@
 local robot = require("robot")
 local event = require("event")
 local term = require ("term")
+local keyb = require("keyboard")
 local exitF
 local eventNumb = 0
 
@@ -23,35 +24,47 @@ local function justAStrangeActivityIndicator()
 	return chars[currentChar]
 end
 
+local function updateScreen(keyvalue)
+    term.clear()
+    print(keyvalue)
+    print("wasd - move")
+    print("e - use")
+    print("q - exit")
+    print("space/shift - up/down")
+    print(justAStrangeActivityIndicator())
+end
+
+updateScreen("")
+
 local function eventHandler(...)
-	local evt = {...}
-	for _, keyvalue in pairs(keycodes) do
-        if evt[4] == keyvalue[1] then
-            term.clear()
-            print(keyvalue[2])
-            print(justAStrangeActivityIndicator())
-			if keyvalue[2] == "q" then --exit
-                exitF = true
-                event.cancel(eventNumb)
-				return
-            elseif keyvalue[2] == "w" then
-                robot.forward()
-                return
-            elseif keyvalue[2] == "a" then
-                robot.turnLeft()
-                return
-            elseif keyvalue[2] == "s" then
-                robot.back()
-                return
-            elseif keyvalue[2] == "d" then
-                robot.turnRight()
-                return
-            elseif keyvalue[2] == "e" then
-                robot.use()
-				return
-            end
-		end
-	end
+	local _, _, _, k = ...
+    updateScreen(keyb.keys[k])
+	if k == keyb.keys["q"] then --exit
+        exitF = true
+        event.cancel(eventNumb)
+		return
+    elseif k == keyb.keys["w"] then
+        robot.forward()
+        return
+    elseif k == keyb.keys["a"] then
+        robot.turnLeft()
+        return
+    elseif k == keyb.keys["s"] then
+        robot.back()
+        return
+    elseif k == keyb.keys["d"] then
+        robot.turnRight()
+        return
+    elseif k == keyb.keys["e"] then
+        robot.use()
+		return
+    elseif k == keyb.keys["space"] then
+        robot.up()
+		return
+    elseif k == keyb.keys["lshift"] then
+        robot.down()
+		return
+    end
 end
 
 eventNumb = event.listen("key_down", eventHandler)
