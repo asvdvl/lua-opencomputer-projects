@@ -7,14 +7,6 @@ local eventNumb = 0
 
 local chars = {"-", "\\", "|", "/"}
 local currentChar = 0 --range 1-4
-local keycodes = { --4 parameter of key_down and key_up events
-    {16, "q"},  --{keycode, "real key"}
-	{17, "w"},
-	{18, "e"},
-	{30, "a"},
-	{31, "s"},
-	{32, "d"}
-}
 
 local function justAStrangeActivityIndicator()
 	currentChar = currentChar + 1

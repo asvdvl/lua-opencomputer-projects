@@ -37,6 +37,8 @@ local grow_kill = 24 -- значение стата grow, при котором 
 local robot = require("robot")
 local computer = require("computer")
 local component = require("component")
+local srl = require("serialization")
+local event = require("event")
 local cropname
 
 local c_cropname = {} --имена дочерних кропов
@@ -57,6 +59,8 @@ local m_gain = {}
 local m_grow = {}
 local m_resistans = {}
 
+component.modem.open(234)
+
 local function robot_error(msg)
 	print("Ошибка: ", msg)
 	computer.beep(1000,0.3)
@@ -69,18 +73,6 @@ local function robotTryForward() -- роботы пытается сделать
 	while robot.forward() == nil do
 		print("Робот столкнулся с препятствием.")
 		os.sleep(1) -- останавливаем робота на 1 секунду
-	end
-end
---------------------------------------
-local function get_crop_stat(analyze_result, stat_name) --функция - просматривает таблицу скана блока и возвращает значение поля, имя которого передано в stat_name. если не находит, то возвращает nil
-	--file = io.open("log.txt", "a") --файл для лога
-	for name, v in pairs(analyze_result) do --просмотрим таблицу реультата анализа кропса
-		local pos = string.find(name, stat_name)
-		--print(pos)
-		if pos ~= nil then -- если строку в метадате нашли
-			--print(v)
-			return v
-		end
 	end
 end
 
@@ -456,17 +448,38 @@ local function findSeedsInRobotInventory() --возвращает номер с�
 	return -1 --вообще ничего нет
 end
 
+local function analyzeCrop()
+	local waypoint = component.navigation.findWaypoints(5)
+	if waypoint.n ~= 0 or waypoint[1].label == "crops" then
+		local tosend = {}					--в процессе пересылки данные могут спутатся, лучше заранее упаковать с именами.
+		tosend.x = waypoint[1].position[1]
+		tosend.z = waypoint[1].position[3]
+
+		local data
+		while not data do
+			print("Попытка получить данные с сервера.")
+			component.modem.broadcast(234, srl.serialize(tosend))
+			data = {event.pull(5, "modem_message")}
+		end
+		print(srl.serialize(data))
+
+		return srl.unserialize(data[6])
+	else
+		error("waypoint not found")
+	end
+end
+
 local function analizeAndProceed(c) --функция анализа и обработки кропа. с - номер кропа.
-	local analyze_result = geo.analyze(0) --анализируем блок под роботом
-	c_cropname[c] = get_crop_stat(analyze_result, "crop:name")
-	if c_cropname[c] ~= nil then -- если перед нами что-то вывелось, а не пустые палки
+	local analyze_result = analyzeCrop() --анализируем блок под роботом
+	c_cropname[c] = analyze_result["name"]
+	if c_cropname[c] ~= "" then -- если перед нами что-то вывелось, а не пустые палки
 
 		--получаем остальные статы кропа
-		c_gain[c] = get_crop_stat(analyze_result, "crop:gain")
-		c_grow[c] = get_crop_stat(analyze_result, "crop:grow")
-		c_resistans[c] = get_crop_stat(analyze_result, "crop:resistance")
-		c_size[c] = get_crop_stat(analyze_result, "crop:size")
-		c_maxSize[c] = get_crop_stat(analyze_result, "crop:maxSize")
+		c_gain[c] = analyze_result["gain"]
+		c_grow[c] = analyze_result["grow"]
+		c_resistans[c] = analyze_result["resistance"]
+		c_size[c] = analyze_result["size"]
+		c_maxSize[c] = analyze_result["maxSize"]
 
 		if c_status[c] == "double crop" or c_status[c] == "unknown" then  --если статус растения был двойные палки, значит появилось новое растение
 			print("Новый кроп С"..c..": "..c_cropname[c].."  "..c_grow[c].."  "..c_gain[c].."  "..c_resistans[c]) -- "Новый кроп С1:    reed"
@@ -587,7 +600,7 @@ local function analizeAndProceed(c) --функция анализа и обра�
 		end
 	else -- если перед нами или пустые палки или воздух
 		if c_status[c] == "unknown" then -- если мы сканируем этот кроп впервые
-			if get_crop_stat(analyze_result, "name") == "IC2:blockCrop" then --если перед нами двойные палки
+			if not analyze_result["exist"] then --если перед нами двойные палки
 				c_status[c] = "double crop"
 			else --перед нами не растение и не двойные палки. значит перед нами воздух
 				--ставим палки
@@ -638,38 +651,38 @@ if mode == 1 then -- 1 - режим поднятия статов кропсов
 
 	-- кроп M1
 	robotMove_P0_M1()
-	local analyze_result = geo.analyze(0)
-	cropname = get_crop_stat(analyze_result, "crop:name")
-	m_gain[1] = get_crop_stat(analyze_result, "crop:gain")
-	m_grow[1] = get_crop_stat(analyze_result, "crop:grow")
-	m_resistans[1] = get_crop_stat(analyze_result, "crop:resistance")
+	local analyze_result = analyzeCrop()
+	cropname = analyze_result["name"]
+	m_gain[1] = analyze_result["gain"]
+	m_grow[1] = analyze_result["grow"]
+	m_resistans[1] = analyze_result["resistance"]
 	print("M1:", cropname, m_grow[1], m_gain[1], m_resistans[1])
 
 	-- кроп M2
 	robotMove_M1_M2()
-	analyze_result = geo.analyze(0)
-	cropname = get_crop_stat(analyze_result, "crop:name")
-	m_gain[2] = get_crop_stat(analyze_result, "crop:gain")
-	m_grow[2] = get_crop_stat(analyze_result, "crop:grow")
-	m_resistans[2] = get_crop_stat(analyze_result, "crop:resistance")
+	analyze_result = analyzeCrop()
+	cropname = analyze_result["name"]
+	m_gain[2] = analyze_result["gain"]
+	m_grow[2] = analyze_result["grow"]
+	m_resistans[2] = analyze_result["resistance"]
 	print("M2:", cropname, m_grow[2], m_gain[2], m_resistans[2])
 
 	-- кроп M3
 	robotMove_M2_M3()
-	analyze_result = geo.analyze(0)
-	cropname = get_crop_stat(analyze_result, "crop:name")
-	m_gain[3] = get_crop_stat(analyze_result, "crop:gain")
-	m_grow[3] = get_crop_stat(analyze_result, "crop:grow")
-	m_resistans[3] = get_crop_stat(analyze_result, "crop:resistance")
+	analyze_result = analyzeCrop()
+	cropname = analyze_result["name"]
+	m_gain[3] = analyze_result["gain"]
+	m_grow[3] = analyze_result["grow"]
+	m_resistans[3] = analyze_result["resistance"]
 	print("M3:", cropname, m_grow[3], m_gain[3], m_resistans[3])
 
 	-- кроп M4
 	robotMove_M3_M4()
-	analyze_result = geo.analyze(0)
-	cropname = get_crop_stat(analyze_result, "crop:name")
-	m_gain[4] = get_crop_stat(analyze_result, "crop:gain")
-	m_grow[4] = get_crop_stat(analyze_result, "crop:grow")
-	m_resistans[4] = get_crop_stat(analyze_result, "crop:resistance")
+	analyze_result = analyzeCrop()
+	cropname = analyze_result["name"]
+	m_gain[4] = analyze_result["gain"]
+	m_grow[4] = analyze_result["grow"]
+	m_resistans[4] = analyze_result["resistance"]
 	print("M4:", cropname, m_grow[4], m_gain[4], m_resistans[4])
 
 	robotMove_M4_P0() --возвращаем робота в исходное положение
