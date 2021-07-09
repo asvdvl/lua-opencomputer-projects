@@ -448,29 +448,17 @@ local function findSeedsInRobotInventory() --возвращает номер с�
 	return -1 --вообще ничего нет
 end
 
-local function analyzeCrop()
-	local waypoint = component.navigation.findWaypoints(5)
-	if waypoint.n ~= 0 or waypoint[1].label == "crops" then
-		local tosend = {}					--в процессе пересылки данные могут спутатся, лучше заранее упаковать с именами.
-		tosend.x = waypoint[1].position[1]
-		tosend.z = waypoint[1].position[3]
-
-		local data
-		while not data do
-			print("Попытка получить данные с сервера.")
-			component.modem.broadcast(234, srl.serialize(tosend))
-			data = {event.pull(5, "modem_message")}
-		end
-		print(srl.serialize(data))
-
-		return srl.unserialize(data[6])
-	else
-		error("waypoint not found")
+local function analyzeCrop(cropName)
+	local data = {}
+	while data[6] ~= "cropServer" do
+		component.modem.broadcast(234, cropName)
+		data = {event.pull(5, "modem_message")}
 	end
+	return srl.unserialize(data[7])
 end
 
 local function analizeAndProceed(c) --функция анализа и обработки кропа. с - номер кропа.
-	local analyze_result = analyzeCrop() --анализируем блок под роботом
+	local analyze_result = analyzeCrop("C"..c) --анализируем блок под роботом
 	c_cropname[c] = analyze_result["name"]
 	if c_cropname[c] ~= "" then -- если перед нами что-то вывелось, а не пустые палки
 
@@ -488,10 +476,8 @@ local function analizeAndProceed(c) --функция анализа и обра�
 
 		--если прокнуло растение другого вида, выкапываем его лопаткой и отвозим в сундук
 		if c_cropname[c] ~= cropname then
-			robot.useDown()--по умолчанию у нас в руках лопатка, юзаем ее
-			component.inventory_controller.equip() --экипируем кропсы(палки)
-			robot.useDown() --ставим палку (получаются жердочки для скрещивания)
-			component.inventory_controller.equip() --возвращаем в руки лопатку
+			robot.swingDown()--ломаем палку
+			placeDoubleCrops() --ставим палку (получаются жердочки для скрещивания)
 			c_status[c] = "double crop" --устанавливаем статус растения - жердочки
 
 			--после копки проверим инвентори робота
@@ -582,7 +568,7 @@ local function analizeAndProceed(c) --функция анализа и обра�
 							robotGoTo_M_Crop_FromPark(interest) --едем на материнский кропс, который будем менять
 							robot.swingDown() --ломаем кропсы, собираем урожай
 							component.inventory_controller.equip() --экипируем кропсы(палки)
-							robot.useDown() --ставим палку на землю
+							robot.useDown() --ставим палку на землю 
 							component.inventory_controller.equip() --возвращаем в руки лопатку
 							robot.select(seedSlot) --делаем активным слот с семенами, которые мы собираемся сажать
 							component.inventory_controller.equip() -- берем семена в руки
@@ -600,14 +586,11 @@ local function analizeAndProceed(c) --функция анализа и обра�
 		end
 	else -- если перед нами или пустые палки или воздух
 		if c_status[c] == "unknown" then -- если мы сканируем этот кроп впервые
-			if not analyze_result["exist"] then --если перед нами двойные палки
+			if analyze_result["exist"] then --если перед нами двойные палки
 				c_status[c] = "double crop"
 			else --перед нами не растение и не двойные палки. значит перед нами воздух
 				--ставим палки
-				component.inventory_controller.equip() --экипируем кропсы(палки)
-				robot.useDown() --ставим палку на землю
-				robot.useDown() --ставим палку (получаются жердочки для скрещивания)
-				component.inventory_controller.equip() --возвращаем в руки лопатку
+				placeDoubleCrops() --ставим палку (получаются жердочки для скрещивания)
 				c_status[c] = "double crop" --устанавливаем статус растения - жердочки
 			end
 		end
@@ -650,42 +633,40 @@ if mode == 1 then -- 1 - режим поднятия статов кропсов
 	--Исходная позиция - робот стоит на P0
 
 	-- кроп M1
-	robotMove_P0_M1()
-	local analyze_result = analyzeCrop()
-	cropname = analyze_result["name"]
-	m_gain[1] = analyze_result["gain"]
-	m_grow[1] = analyze_result["grow"]
-	m_resistans[1] = analyze_result["resistance"]
-	print("M1:", cropname, m_grow[1], m_gain[1], m_resistans[1])
+	local analyze_result = analyzeCrop("M1")
+	local index = 1
+	cropname = analyze_result.name
+	m_gain[index] = analyze_result.gain
+	m_grow[index] = analyze_result.grow
+	m_resistans[index] = analyze_result.resistance
+	print("M1:", cropname, m_grow[index], m_gain[index], m_resistans[index])
 
 	-- кроп M2
-	robotMove_M1_M2()
-	analyze_result = analyzeCrop()
-	cropname = analyze_result["name"]
-	m_gain[2] = analyze_result["gain"]
-	m_grow[2] = analyze_result["grow"]
-	m_resistans[2] = analyze_result["resistance"]
-	print("M2:", cropname, m_grow[2], m_gain[2], m_resistans[2])
+	analyze_result = analyzeCrop("M2")
+	index = 2
+	cropname = analyze_result.name
+	m_gain[index] = analyze_result.gain
+	m_grow[index] = analyze_result.grow
+	m_resistans[index] = analyze_result.resistance
+	print("M2:", cropname, m_grow[index], m_gain[index], m_resistans[index])
 
 	-- кроп M3
-	robotMove_M2_M3()
-	analyze_result = analyzeCrop()
-	cropname = analyze_result["name"]
-	m_gain[3] = analyze_result["gain"]
-	m_grow[3] = analyze_result["grow"]
-	m_resistans[3] = analyze_result["resistance"]
-	print("M3:", cropname, m_grow[3], m_gain[3], m_resistans[3])
+	analyze_result = analyzeCrop("M3")
+	index = 3
+	cropname = analyze_result.name
+	m_gain[index] = analyze_result.gain
+	m_grow[index] = analyze_result.grow
+	m_resistans[index] = analyze_result.resistance
+	print("M3:", cropname, m_grow[index], m_gain[index], m_resistans[index])
 
 	-- кроп M4
-	robotMove_M3_M4()
-	analyze_result = analyzeCrop()
-	cropname = analyze_result["name"]
-	m_gain[4] = analyze_result["gain"]
-	m_grow[4] = analyze_result["grow"]
-	m_resistans[4] = analyze_result["resistance"]
-	print("M4:", cropname, m_grow[4], m_gain[4], m_resistans[4])
-
-	robotMove_M4_P0() --возвращаем робота в исходное положение
+	analyze_result = analyzeCrop("M4")
+	index = 4
+	cropname = analyze_result.name
+	m_gain[index] = analyze_result.gain
+	m_grow[index] = analyze_result.grow
+	m_resistans[index] = analyze_result.resistance
+	print("M4:", cropname, m_grow[index], m_gain[index], m_resistans[index])
 end
 ----------------------------------------------------
 --Шаг 3
@@ -694,7 +675,6 @@ if mode == 1 then -- 1 - режим поднятия статов кропсов
 else -- 2 - режим разведения дубликатов кропсов
 	print("Шаг 2. Приступаем к разведению дубликатов кропсов.");
 end
-
 while true do --главный цикл
 	--пополняем запас палок в роботе
 	if grabCropsFromBarrel() then
