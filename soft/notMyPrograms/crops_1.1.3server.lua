@@ -15,6 +15,81 @@ local crops = {
     M1 = "d02f",
     C1 = "76c8"
 }
+local cropSizes = {
+    weed = 5,
+    brownmushrooms = 3,
+    pumpkin = 4,
+    redmushrooms = 3,
+    wheat = 7,
+    brownmushroom = 3,
+    carrots = 3,
+    dandelion = 4,
+    rose = 4,
+    flax = 4,
+    indigo = 4,
+    melon = 4,
+    olivia = 4,
+    potato = 4,
+    redmushroom = 3,
+    reed = 3,
+    cocoa = 4,
+    fertilia = 4,
+    venomilia = 6,
+    zomplant = 4,
+    sapphirum = 4,
+    spidernip = 4,
+    stickreed = 4,
+    corpseplant = 4,
+    hops = 7,
+    netherwart = 3,
+    nickelback = 3,
+    terrawart = 3,
+    tine = 3,
+    bauxia = 3,
+    blazereed = 4,
+    coppon = 3,
+    corium = 4,
+    cyprium = 4,
+    eatingplant = 6,
+    eggplant = 3,
+    ferru = 4,
+    galvania = 3,
+    milkwart = 3,
+    plumbilia = 4,
+    plumbiscus = 4,
+    redwheat = 7,
+    slimeplant = 4,
+    stagnium = 4,
+    trollplant = 5,
+    argentia = 4,
+    coffee = 5,
+    creeperweed = 4,
+    lazulia = 4,
+    meatrose = 4,
+    aurelia = 5,
+    evilore = 4,
+    liveroots = 4,
+    shining = 5,
+    tearstalks = 4,
+    withereed = 4,
+    godofthunder = 4,
+    oilberries = 4,
+    titania = 3,
+    enderbloom = 4,
+    glowheat = 7,
+    steeleafranks = 4,
+    bobsyeruncleranks = 4,
+    platina = 4,
+    diareed = 4,
+    pyrolusium = 3,
+    quantaria = 4,
+    reactoria = 4,
+    scheelinium = 3,
+    stargatium = 4,
+    starwart = 4,
+    transformium = 4,
+    [""] = 0
+}
 cmp.modem.open(234)
 
 local function stopAll()
@@ -46,7 +121,7 @@ local function getCrop(cropName)
     cropStats.grow = crop.getGrowth()
     cropStats.resistance = crop.getResistance()
     cropStats.size = crop.getSize()
-    cropStats.maxSize = 4 --openperipheral donthave api for this
+    cropStats.maxSize = cropSizes[string.lower(cropStats.name)] --openperipheral donthave api for this. string.lower is used just in case.
     return cropStats
 end
 
