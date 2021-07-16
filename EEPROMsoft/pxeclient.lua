@@ -1,6 +1,6 @@
 local port = 6
 local modem
-local title = "PXEClient"
+local prefix = "PXEClient"
 local serverAddr
 local content
 
@@ -9,26 +9,32 @@ local exist = pairs(component.list("tunnel"))
 if exist then
     modem = component.proxy(component.list("tunnel")())
     function modem.getServer()
-        modem.send(title, "whoIsPXEServer")
+        modem.send(prefix, "whoIsPXEServer")
     end
     function modem.getProgramm()
-        modem.send(title, "getProgramm")
+        modem.send(prefix, "getProgramm")
+    end
+    function modem.message(...)
+        modem.send(prefix, "message", ...)
     end
 else
     modem = component.proxy(component.list("modem")())
     modem.open(port)
     function modem.getServer()
-        modem.broadcast(port, title, "whoIsPXEServer")
+        modem.broadcast(port, prefix, "whoIsPXEServer")
     end
     function modem.getProgramm()
-        modem.send(serverAddr, port, title, "getProgramm")
+        modem.send(serverAddr, port, prefix, "getProgramm")
+    end
+    function modem.message(...)
+        modem.send(serverAddr, port, prefix, "message", ...)
     end
 end
 
 for i = 1, 20 do
     modem.getServer()
-    local mess={computer.pullSignal(2)}
-    if mess[1] == "modem_message" and mess[6] == "PXEServer" then
+    local mess={computer.pullSignal(5)}
+    if mess[1] == "modem_message" and mess[6] == "PXEServer" and mess[7] == "iAmPXEServer" then
         serverAddr = mess[3]
         break
     end
@@ -40,13 +46,16 @@ end
 
 for i = 1, 10 do
     modem.getProgramm()
-    local mess={computer.pullSignal(2)}
-    if mess[1] == "modem_message" and mess[6] == "PXEServer" then
-        content = mess[7]
+    local mess={computer.pullSignal(5)}
+    if mess[1] == "modem_message" and mess[6] == "PXEServer" and mess[7] == "content" then
+        content = mess[8]
         break
     end
 end
 
 if not content then
+    modem.message("error", "get content timeout")
     error("get content timeout")
 end
+
+modem.message("result", xpcall(load(content), debug.traceback))
