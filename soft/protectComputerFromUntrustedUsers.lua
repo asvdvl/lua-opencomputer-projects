@@ -3,41 +3,40 @@ local mode = 0
 --0 - black list
 --1 - white list
 local users = {
-"notch",
-"Herobrine",
+	"notch",
+	"Herobrine"
 }
---{"event", user name string number in array}
+
+--{"event", the index of the username in the table row}
 local onEvents = {
-{"key_down", 5},
-{"key_up", 5},
-{"motion", 6},
-{"touch", 6},
-{"drop", 6},
+	key_down = 5,
+	key_up = 5,
+	motion = 6,
+	touch = 6,
+	drop = 6
 }
 
-local function check(...) 
-	local param = {...} 
-	local pointer = 0
-	local findUser = false
+local function check(...)
+	local args = {...}
+	local foundUser = false
 
-	for _, events in pairs(onEvents) do
-		if param[1] == events[1] then
-			pointer = events[2]
-			break;
-		end
+	local foundPointer = onEvents[args[1]]
+	if not foundPointer then
+		return
 	end
 
 	for _, name in pairs(users) do
-		if name == param[pointer] then
-			findUser = true
+		if name == args[foundPointer] then
+			foundUser = true
+			break
 		end
 	end
 
-	if (findUser and mode == 0) or (not findUser and mode == 1) then
+	if (foundUser and mode == 0) or (not foundUser and mode == 1) then
 		require("computer").shutdown()
 	end
 end
 
-for _, events in pairs(onEvents) do
-	event.listen(events[1], check)
+for eventName in pairs(onEvents) do
+	event.listen(eventName, check)
 end
