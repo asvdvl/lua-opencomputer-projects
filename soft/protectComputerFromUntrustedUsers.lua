@@ -1,7 +1,11 @@
 local event = require("event")
+local computer = require("computer")
 local mode = 0
 --0 - black list
 --1 - white list
+local protectMode = "soft"
+-- "soft" - block events from ban player
+-- "hard" - just shutdown computer
 local users = {
 	"notch",
 	"Herobrine"
@@ -37,6 +41,33 @@ local function check(...)
 	end
 end
 
-for eventName in pairs(onEvents) do
-	event.listen(eventName, check)
+if protectMode == "hard" then
+	for eventName in pairs(onEvents) do
+		event.listen(eventName, check)
+	end
+elseif protectMode == "soft" then
+	local originalPullSignal = computer.pullSignal
+	function computer.pullSignal(...)
+		local args = {originalPullSignal(...)}
+		local foundUser = false
+		local foundPointer = onEvents[args[1]]
+		if not foundPointer then
+			return table.unpack(args)
+		end
+
+		for _, name in pairs(users) do
+			if name == args[foundPointer] then
+				foundUser = true
+				if mode == 0 then
+					return nil
+				end
+			end
+		end
+
+		if not foundUser and mode == 1 then
+			return nil
+		end
+		return table.unpack(args)
+	end
 end
+
