@@ -14,6 +14,10 @@ function this.checkFunction(_, machines)
             local mach = cmp.proxy(addr)
             local problems = tonumber(mach.getSensorInformation()[7])
             if problems > 0 then
+                if type(value.options.problemsCount) == "nil" then
+                    value.options.problemsCount = 0
+                end
+                value.options.problemsCount = value.options.problemsCount + problems
                 table.insert(toreturn, "`"..value.title.."` detect problems: "..problems)
             end
         end
