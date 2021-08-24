@@ -16,6 +16,7 @@ function this.checkFunction(_, machines)
             if problems > 0 then
                 if type(value.options.problemsCount) == "nil" then
                     value.options.problemsCount = 0
+                    value.options.allowDisable = true
                 end
                 value.options.problemsCount = value.options.problemsCount + problems
                 table.insert(toreturn, "`"..value.title.."` detect problems: "..problems)
