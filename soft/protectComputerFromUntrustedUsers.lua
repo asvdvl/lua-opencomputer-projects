@@ -17,7 +17,8 @@ local onEvents = {
 	key_up = 5,
 	motion = 6,
 	touch = 6,
-	drop = 6
+	drop = 6,
+	clipboard = 4
 }
 
 local function check(...)
