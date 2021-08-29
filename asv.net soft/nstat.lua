@@ -27,5 +27,5 @@ end
 collectData()
 
 statsFileWriter:close()
-loadfile("/bin/edit.lua")(fileName)
+loadfile("/bin/edit.lua")("-r",fileName)
 require("filesystem").remove(fileName)
