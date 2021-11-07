@@ -1,11 +1,8 @@
 local cmp = require("component")
 local reactor = cmp.br_reactor
 local RS = cmp.redstone
-local itemOnTurnOn = "minecraft:redstone_torch"
-local itemOnTurnOff = "minecraft:lever"
 local messageOnTurnOn = "реактор включен"
 local messageOnTurnOff = "реактор выключен"
-local notifI = cmp.notification_interface
 local percentCharge
 local rodLevel
 local valueMinimum = 20
@@ -15,19 +12,23 @@ local retentionMode = false
 local function turnOn()
   reactor.setActive(true)
   reactor.setAllControlRodLevels(0)
-  notifI.notify(messageOnTurnOn, "", itemOnTurnOn, 0)
+  print(messageOnTurnOn)
   retentionMode = false
 end
 
 local function turnOff()
   reactor.setActive(false)
   reactor.setAllControlRodLevels(0)
-  notifI.notify(messageOnTurnOff, "", itemOnTurnOff, 0)
+  print(messageOnTurnOff)
   retentionMode = false
 end
 
 
+print("start")
 while true do
+  --if draconic energy storage
+  --percentCharge = ((cmp.draconic_rf_storage.getEnergyStored()/cmp.draconic_rf_storage.getMaxEnergyStored())*100)
+  --if internal buffer
   percentCharge = ((reactor.getEnergyStored()/reactor.getEnergyCapacity())*100)
   if percentCharge > valueMaximum and reactor.getActive() then
     turnOff()
@@ -43,7 +44,7 @@ while true do
     reactor.setAllControlRodLevels(rodLevel)
     if retentionMode ~= true then
       retentionMode = true
-      notifI.notify("режим стабилизации", "", "minecraft:obsidian", 0)
+      print("режим стабилизации")
     end
   end
   os.sleep(0.1)
