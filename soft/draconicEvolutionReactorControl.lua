@@ -28,8 +28,8 @@ local eventNumb = 0
 local lastpidEnergy, lastpidShield, info = 0, 0, {}
 
 --user settings
-local arrdINRegulator = "20a"
-local arrdOUTRegulator = "d47"
+local arrdINRegulator = "000" --flux gate directed from the STORAGE to the REACTOR
+local arrdOUTRegulator = "111" --flux gate directed from the REACTOR to the STORAGE
 local reactorAddress = ""   --optional
 local delay = 1             --in seconds
 local shieldLevel = 50      --in persent
