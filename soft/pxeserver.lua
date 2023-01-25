@@ -42,6 +42,7 @@ local function getModem(addr)
 end
 
 local function sendWakeupMessage()
+    log("send ping")
     for addr in pairs(cmp.list("modem")) do
         getModem(addr).wakeupMessage()
     end
@@ -86,6 +87,7 @@ end
 messagesListen = event.listen("modem_message", onModemMessage)
 interruptListen = event.listen("interrupted", stopAll)
 
+sendWakeupMessage()
 while not exitF do
     event.pull(30)
 end

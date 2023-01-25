@@ -9,19 +9,23 @@ local function print(...)
 	oPrint(...)
 end
 
+if barrel.getStoredCount()/barrel.getMaxStoredCount() < 0.9 then
+	cmp.redstone.setOutput(3, 0)
+end
+
 local size, maxSize, iterations, haveProblem = 0, 0, 0, false;
 while true do
 	haveProblem = false;
 	size, maxSize = barrel.getStoredCount(), barrel.getMaxStoredCount()
 
+	if size/maxSize < 0.1 then
+		cmp.redstone.setOutput(3, 0)
+	elseif size/maxSize >= 0.9 then
+		cmp.redstone.setOutput(3, 15)
+	end
+
 	if size/maxSize >= 0.95 then
 		print("over 95% buffer chest full")
-		haveProblem = true
-	elseif size/maxSize >= 0.70 then
-		print("over 70% buffer chest full")
-		haveProblem = true
-	elseif size/maxSize >= 0.50 then
-		print("over 50% buffer chest full")
 		haveProblem = true
 	end
 
