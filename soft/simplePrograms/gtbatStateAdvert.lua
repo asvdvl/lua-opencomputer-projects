@@ -10,6 +10,7 @@ local bbInfo
 local exitF
 
 local packetStruc = {
+    type = "none",
     stored = {
         current = 0,
         max = 0
@@ -30,6 +31,8 @@ local function sendData(srcAddr)
         os.exit()
     end
 
+    --best way - copy table to a new one, but in this case(send only) it dont need
+    packetStruc.type = "response"
     packetStruc.stored.current = string.gsub(bbInfo[3], "([^0-9]+)", "")+0
     packetStruc.stored.max = string.gsub(bbInfo[4], "([^0-9]+)", "")+0
     packetStruc.flow.input = string.gsub(string.gsub(bbInfo[6], "([^0-9]+)", ""), "^(6)", "")+0
@@ -66,7 +69,7 @@ end
 --register proto
 link.protocols[protoName] = {
     onMessageReceived = function(dstAddr, frame, srcAddr)
-        if frame == "get" then
+        if frame.data.type == "request" then
             sendData(srcAddr)
         end
     end
