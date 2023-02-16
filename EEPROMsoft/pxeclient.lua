@@ -3,11 +3,11 @@ local modem
 local prefix = "PXEClient"
 local serverAddr
 local content
+local modemNotFound = true
 
-local exist = pairs(component.list("tunnel"))
-
+local exist = component.list("tunnel")()
 if exist then
-    modem = component.proxy(component.list("tunnel")())
+    modem = component.proxy(exist)
     function modem.getServer()
         modem.send(prefix, "whoIsPXEServer")
     end
@@ -17,8 +17,12 @@ if exist then
     function modem.message(...)
         modem.send(prefix, "message", ...)
     end
-else
-    modem = component.proxy(component.list("modem")())
+    modemNotFound = false
+end
+
+exist = component.list("modem")()
+if exist then
+    modem = component.proxy(exist)
     modem.open(port)
     function modem.getServer()
         modem.broadcast(port, prefix, "whoIsPXEServer")
@@ -29,6 +33,11 @@ else
     function modem.message(...)
         modem.send(serverAddr, port, prefix, "message", ...)
     end
+    modemNotFound = false
+end
+
+if modemNotFound then
+    error("no modem or tunnel")
 end
 
 for i = 1, 20 do
