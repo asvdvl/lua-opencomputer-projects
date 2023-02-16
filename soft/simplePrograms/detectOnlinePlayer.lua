@@ -2,11 +2,15 @@
 
 local comp = require("computer")
 local cmp = require("component")
---local rs = cmp.redstone
+local rs = cmp.redstone
+local testtype = 0 --0 - one of all, 1 - all should be online
+local redstoneSide = 0
+
+rs.setOutput(redstoneSide, 0)
 
 local players = {
-    "test",
-    "test1"
+    "dial-up",
+    "darkwolfqww"
 }
 
 for _, nick in pairs(players) do
@@ -19,8 +23,17 @@ local function probePlayer(nick)
     return result
 end
 
+local probsuccess = 0
 for _, nick in pairs(players) do
-    if probePlayer(nick) then
-        print(nick)
+    local probe = probePlayer(nick)
+    if probe then
+        probsuccess = probsuccess + 1
+        if testtype == 0 then
+            rs.setOutput(redstoneSide, 15)
+        end
     end
+end
+
+if probsuccess == #players then
+    rs.setOutput(redstoneSide, 15)
 end
