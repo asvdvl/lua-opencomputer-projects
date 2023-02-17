@@ -37,5 +37,8 @@ while true do
     if probsuccess == #players then
         rs.setOutput(redstoneSide, 15)
     end
+    if probsuccess == 0 then
+        rs.setOutput(redstoneSide, 0)
+    end
     computer.pullSignal(5)
 end
