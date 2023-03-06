@@ -13,7 +13,8 @@ local packetStruc = {
     type = "none",
     stored = {
         current = 0,
-        max = 0
+        max = 1,
+        percent = 0
     },
     flow = {
         input = 0,
@@ -35,10 +36,12 @@ local function sendData(srcAddr)
     packetStruc.type = "response"
     packetStruc.stored.current = string.gsub(bbInfo[3], "([^0-9]+)", "")+0
     packetStruc.stored.max = string.gsub(bbInfo[4], "([^0-9]+)", "")+0
+    packetStruc.stored.percent = math.ceil((packetStruc.stored.current / packetStruc.stored.max)*100000)/1000
     packetStruc.flow.input = string.gsub(string.gsub(bbInfo[6], "([^0-9]+)", ""), "^(6)", "")+0
     packetStruc.flow.output = string.gsub(bbInfo[8], "([^0-9]+)", "")+0
 
-    print("report:")
+    print("---report:")
+    print(tostring(packetStruc.stored.percent).."%")
     print("buff: "..tostring(packetStruc.stored.current).."/"..tostring(packetStruc.stored.max))
     print("flow: in "..tostring(packetStruc.flow.input).."; out "..tostring(packetStruc.flow.output))
 
