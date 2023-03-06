@@ -13,13 +13,13 @@ end
 local function collectData()
     printRow("phys level")
     for key, value in pairs(net.phys.service.stats) do
-        printRow(key..": \t"..value)
+        printRow(key..":    "..value)
     end
     printRow("")
 
     printRow("LinkLayer level")
-    for key, value in pairs(net.LL.service.stats) do
-        printRow(key..": \t"..value)
+    for key, value in pairs(net.Layers.Link.service.stats) do
+        printRow(key..":    "..value)
     end
     printRow("")
 end
