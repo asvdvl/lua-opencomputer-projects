@@ -58,20 +58,17 @@ end
 
 local function firstReqest(nolog)
     link.broadcast(nil, protoName, {type = "request"})
-    for i = 1, 4 do
+    for i = 1, 3 do
         os.sleep(1)
-        if lastAnswer > 0 then
+        if (math.ceil(((os.time()/3.6/20)-lastAnswer)*100)/100) < advTimeout then
             if not nolog then log("succes!") end
             break
-        elseif i == 4 then
-            if not nolog then log("bb dont answer(network issue?)") end
-            os.exit()
         end
         if not nolog then log("attempt: "..i) end
         link.broadcast(nil, protoName, {type = "request"})
     end
 end
-log("try to get bb status")
+log("try to get bb status, if failed, programm start but stop turbines after some time")
 firstReqest()
 
 local function shortName(name)
@@ -193,14 +190,15 @@ while not exitF do
     processing()
     report()
 
-    local timediff = (math.ceil(((os.time()/3.6/20)-lastAnswer)*100)/100)
-    if timediff > advTimeout and globalWorkAllowed and connectionLostFixState == 0 then
-        log("detect lost connection with battery buffer")
-        log("try to request directly")
+    local function timediff()
+        return (math.ceil(((os.time()/3.6/20)-lastAnswer)*100)/100)
+    end
+    if timediff() > advTimeout and globalWorkAllowed and connectionLostFixState == 0 then
+        log("detect lost connection with battery buffer, try to request directly")
 
         firstReqest()
 
-        if timediff > advTimeout then
+        if timediff() > advTimeout then
             connectionLostFixState = 1
         else
             connectionLostFixState = 0
@@ -210,7 +208,8 @@ while not exitF do
 
         initProto()
         firstReqest()
-        if timediff > advTimeout then
+
+        if timediff() > advTimeout then
             connectionLostFixState = 2
             globalWorkAllowed = false
             log("stop turbines, wait while bb will be answer")
@@ -220,8 +219,9 @@ while not exitF do
     elseif connectionLostFixState == 2 then
         firstReqest(true)
 
-        if timediff < advTimeout then
+        if timediff() < advTimeout then
             connectionLostFixState = 0
+            log("got data!")
         end
     else
         connectionLostFixState = 0
