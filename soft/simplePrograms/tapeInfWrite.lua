@@ -3,7 +3,6 @@ local term = require("term")
 local time = require("asv").time
 local td = cmp.tape_drive
 local dictinary = {}
-local iA = {0, 0, 0, 0, 0, 0, 0, 0}
 local maxval = 255
 
 local function prClr(...)
@@ -31,7 +30,7 @@ local data = ""
 local prevTime = time.getRaw()
 while not td.isEnd() do
     data = ""
-    for i = 0, 255 do
+    for i = 0, 255^2 do
         data = data..dictinary[math.random(0, maxval)]
     end
     td.write(data)
