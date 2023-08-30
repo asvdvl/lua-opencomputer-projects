@@ -3,6 +3,7 @@
         "checkArg",
         "machineControllerENV",
         "component",
-        "computer"
+        "computer",
+        "os.sleep"
     ]
 }
