@@ -93,7 +93,7 @@ local function main()
     printInfo()
 
     --shield PID
-    if info.status == "running" or info.status == "stopping" then
+    if info.status == "running" or info.status == "stopping" or info.status == "online" then
         local pidoutShield = calculatePID(info.fieldStrength, PIDShield)
         INRegulator.setSignalLowFlow(pidoutShield)
 
@@ -108,9 +108,9 @@ local function main()
 
 
     --processing reactor states
-    if info.status == "invalid" then
+    if info.status == "invalid" or info.status == "invalid setup" then
         print("reactor have invalid structure. check the reactor structure")
-    elseif info.status == "warming_up" then
+    elseif info.status == "warming_up" or info.status == "charging" or info.status == "charged" then
         if info.temperature < 2000 then
             --calculate shield
             info = reactor.getReactorInfo()
@@ -124,7 +124,7 @@ local function main()
             print("press 's' to activate reactor")
         end
         print("press 'd' to shutdown reactor")
-    elseif info.status == "running" then
+    elseif info.status == "running" or info.status == "online" then
         local pidoutEnergy = calculatePID(info.temperature, PIDEnergy)
         OUTRegulator.setSignalLowFlow(pidoutEnergy)
 
@@ -137,18 +137,20 @@ local function main()
         print("press 's' to shutdown reactor")
     elseif info.status == "stopping" then
         print("press 's' to activate reactor")
-    elseif info.status == "cooling" or info.status == "cold" then
+    elseif info.status == "cold" or info.status == "cooling" or info.status == "offline" then
         print("press 's' to charge reactor")
     elseif info.status == "beyond_hope" then
         print("oops...")
+    else
+        print("unknown state")
     end
 
     if printHelp then
         print("q - exit")
         print("h - show/hide this text")
         print("s - start/stop reactor")
-        print("t/y - +/- temperature")
-        print("j/k - +/- shield level")
+        print("t/y - -/+ temperature")
+        print("j/k - -/+ shield level")
     else
         print("press 'h' for keyhelp")
     end
@@ -163,23 +165,23 @@ local function eventHandler(...)
         printHelp = not printHelp
     elseif ev[4] == 23 then --i(debug mode)
         debugMode = not debugMode
-    elseif ev[4] == 20 then --t
-        PIDEnergy.needLevel = PIDEnergy.needLevel + 1
     elseif ev[4] == 21 then --y
+        PIDEnergy.needLevel = PIDEnergy.needLevel + 1
+    elseif ev[4] == 20 then --t
         PIDEnergy.needLevel = PIDEnergy.needLevel - 1
-    elseif ev[4] == 36 then --j
-        shieldLevel = shieldLevel + 1
     elseif ev[4] == 37 then --k
+        shieldLevel = shieldLevel + 1
+    elseif ev[4] == 36 then --j
         shieldLevel = shieldLevel - 1
     elseif ev[4] == 31 then --s
-        if info.status == "cold" or info.status == "cooling" then
+        if info.status == "cold" or info.status == "cooling"  or info.status == "offline" then
             reactor.chargeReactor()
-        elseif (info.status == "warming_up" and info.temperature >= 2000) or info.status == "stopping" then
+        elseif ((info.status == "warming_up" or info.status == "charging") and info.temperature >= 2000) or info.status == "stopping" or info.status == "charged" then
             reactor.activateReactor()
-        elseif info.status == "running" then
+        elseif info.status == "running" or info.status == "online" then
             reactor.stopReactor()
         end
-    elseif ev[4] == 32 and info.status == "warming_up" then
+    elseif ev[4] == 32 and (info.status == "warming_up" or info.status == "charging" or info.status == "charged") then
         reactor.stopReactor()
     end
     PIDShield.needLevel = info.maxFieldStrength * (shieldLevel/100)
