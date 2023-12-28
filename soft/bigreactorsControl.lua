@@ -28,6 +28,8 @@ print("start")
 while true do
   --if draconic energy storage
   --percentCharge = ((cmp.draconic_rf_storage.getEnergyStored()/cmp.draconic_rf_storage.getMaxEnergyStored())*100)
+  --if ender io energy storage
+  --percentCharge = ((cmp.capacitor_bank.getEnergyStored()/cmp.capacitor_bank.getMaxEnergyStored())*100)
   --if internal buffer
   percentCharge = ((reactor.getEnergyStored()/reactor.getEnergyCapacity())*100)
   if percentCharge > valueMaximum and reactor.getActive() then
@@ -40,7 +42,7 @@ while true do
       turnOn()
     end
     rodLevel = (((percentCharge - (valueMinimum+5))/((valueMaximum-5) - (valueMinimum+5)))*100)
-    RS.setOutput(3, 150/rodLevel)
+    RS.setOutput(3, (1-rodLevel/100)*16)
     reactor.setAllControlRodLevels(rodLevel)
     if retentionMode ~= true then
       retentionMode = true
