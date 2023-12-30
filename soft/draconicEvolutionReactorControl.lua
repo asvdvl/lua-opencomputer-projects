@@ -111,7 +111,7 @@ local function main()
     if info.status == "invalid" or info.status == "invalid setup" then
         print("reactor have invalid structure. check the reactor structure")
     elseif info.status == "warming_up" or info.status == "charging" or info.status == "charged" then
-        if info.temperature < 2000 then
+        if info.temperature < 2000 or info.status == "charging" then
             --calculate shield
             info = reactor.getReactorInfo()
             PIDShield.needLevel = info.maxFieldStrength * (shieldLevel/100)

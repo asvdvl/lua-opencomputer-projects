@@ -41,7 +41,7 @@ while true do
     if reactor.getActive() ~= true then
       turnOn()
     end
-    rodLevel = (((percentCharge - (valueMinimum+5))/((valueMaximum-5) - (valueMinimum+5)))*100)
+    rodLevel = (((percentCharge - (valueMinimum))/((valueMaximum) - (valueMinimum)))*100)
     RS.setOutput(3, (1-rodLevel/100)*16)
     reactor.setAllControlRodLevels(rodLevel)
     if retentionMode ~= true then
