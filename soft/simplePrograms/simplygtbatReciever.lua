@@ -1,4 +1,5 @@
-local time = require("asv").time
+--I wrote this so long ago that I don’t even remember what I changed, so I’ll leave it as it is
+--Also, in addition to a simple update, there is also added output to the chat, and shows tps, well, it should be 3 different programs, but I will not separate them back
 local cmp = require("component")
 local event = require("event")
 local gpu = cmp.gpu
@@ -47,6 +48,7 @@ local row2 = ""
 
 --register proto
 local i = 0
+local cel = math.ceil
 link.protocols[protoName] = {
     onMessageReceived = function(dstAddr, frame, srcAddr)
         local data, bagRequest = utils.correctTableStructure(frame.data, packetStruc)
@@ -64,17 +66,17 @@ link.protocols[protoName] = {
 
             if i < 0 then
                 chat.say("§r§2"..row1.."§f(§3"
-                  ..tostring(currPerc - prewPerc).."§f)§c "
-                  ..tostring(data.flow.input).."§f/§a"
-                  ..tostring(data.flow.output).." §f(§3"
-                  ..tostring(data.flow.input-data.flow.output).."§f)")
+                  ..tostring(utils.math.ceilWithPrecision(currPerc - prewPerc, 3)).."§f) in §c "
+                  ..tostring(cel(data.flow.input)).."§f/out §a"
+                  ..tostring(cel(data.flow.output)).." §f(§3"
+                  ..tostring(cel(data.flow.input-data.flow.output)).."§f)")
                 i = 6
                 prewPerc = currPerc
             end
         end
     end
 }
-
+link.broadcast(nil, protoName, {type = "request"})
 ---
 
 local function getTicks()
@@ -97,7 +99,6 @@ local function stopAll()
 end
 
 interruptListen = event.listen("interrupted", stopAll)
-local ti = false
 
 while not exitF do
     local realTime = time.getRaw()
